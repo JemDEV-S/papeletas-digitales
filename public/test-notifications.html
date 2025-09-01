@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="test-token">
+    <meta name="user-id" content="1">
+    <title>Test Notificaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        #notifications-dropdown {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        #notifications-dropdown.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">Test Sistema de Notificaciones</h1>
+        
+        <!-- Botón de notificaciones -->
+        <div class="relative mb-6">
+            <button id="notifications-toggle" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center">
+                <i class="fas fa-bell mr-2"></i>
+                Notificaciones
+                <span id="notification-count" class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1" style="display: none;">0</span>
+            </button>
+            
+            <!-- Dropdown -->
+            <div id="notifications-dropdown" 
+                 class="absolute top-full left-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                 style="display: none;">
+                
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-900">Notificaciones</h3>
+                        <div class="flex items-center space-x-2">
+                            <button id="sound-toggle" 
+                                    onclick="toggleNotificationSounds()"
+                                    class="text-gray-400 hover:text-gray-600 p-1 rounded">
+                                <i id="sound-icon" class="fas fa-volume-up text-sm"></i>
+                            </button>
+                            <button onclick="markAllNotificationsAsRead()" 
+                                    class="text-blue-600 hover:text-blue-800 text-xs font-medium">
+                                Marcar como leídas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="notifications-list" class="max-h-96 overflow-y-auto">
+                    <div class="px-4 py-8 text-center text-gray-500">
+                        <i class="fas fa-bell-slash text-2xl mb-2 text-gray-300"></i>
+                        <p class="text-sm">No tienes notificaciones</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botones de test -->
+        <div class="space-y-3">
+            <button onclick="testNotifications()" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+                Test Notificación
+            </button>
+            
+            <button onclick="testSound()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded">
+                Test Sonido
+            </button>
+            
+            <button onclick="testDropdown()" class="w-full bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded">
+                Test Dropdown
+            </button>
+        </div>
+        
+        <div class="mt-6 text-xs text-gray-500">
+            <p>Abre la consola del navegador (F12) para ver los logs</p>
+        </div>
+    </div>
+
+    <script>
+        // Sistema simplificado de notificaciones para test
+        let isDropdownOpen = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing test page...');
+            setupDropdown();
+        });
+
+        function setupDropdown() {
+            const toggle = document.getElementById('notifications-toggle');
+            const dropdown = document.getElementById('notifications-dropdown');
+
+            if (toggle && dropdown) {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    isDropdownOpen = !isDropdownOpen;
+                    console.log('Dropdown toggled:', isDropdownOpen);
+                    
+                    if (isDropdownOpen) {
+                        dropdown.style.display = 'block';
+                        setTimeout(() => {
+                            dropdown.style.opacity = '1';
+                            dropdown.style.transform = 'scale(1)';
+                        }, 10);
+                    } else {
+                        dropdown.style.opacity = '0';
+                        dropdown.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            dropdown.style.display = 'none';
+                        }, 200);
+                    }
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!dropdown.contains(e.target) && !toggle.contains(e.target) && isDropdownOpen) {
+                        isDropdownOpen = false;
+                        dropdown.style.opacity = '0';
+                        dropdown.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            dropdown.style.display = 'none';
+                        }, 200);
+                    }
+                });
+
+                console.log('Dropdown setup complete');
+            } else {
+                console.error('Dropdown elements not found');
+            }
+        }
+
+        function testNotifications() {
+            console.log('Testing notification...');
+            alert('Sistema de notificaciones funcionando!');
+            
+            // Simular contador
+            const counter = document.getElementById('notification-count');
+            if (counter) {
+                counter.textContent = '1';
+                counter.style.display = 'inline';
+            }
+        }
+
+        function testSound() {
+            console.log('Testing sound...');
+            playTestSound();
+        }
+
+        function playTestSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+                console.log('Sound played successfully');
+            } catch (error) {
+                console.error('Error playing sound:', error);
+            }
+        }
+
+        function testDropdown() {
+            console.log('Testing dropdown manually...');
+            const toggle = document.getElementById('notifications-toggle');
+            if (toggle) {
+                toggle.click();
+            }
+        }
+
+        function toggleNotificationSounds() {
+            console.log('Toggle sounds clicked');
+            const soundIcon = document.getElementById('sound-icon');
+            const currentState = localStorage.getItem('notifications_sound_enabled') !== 'false';
+            localStorage.setItem('notifications_sound_enabled', !currentState);
+            
+            if (soundIcon) {
+                soundIcon.className = !currentState ? 'fas fa-volume-up text-sm' : 'fas fa-volume-mute text-sm';
+            }
+            
+            alert(!currentState ? 'Sonidos activados' : 'Sonidos desactivados');
+        }
+
+        function markAllNotificationsAsRead() {
+            console.log('Mark all as read clicked');
+            const counter = document.getElementById('notification-count');
+            if (counter) {
+                counter.style.display = 'none';
+            }
+            alert('Todas las notificaciones marcadas como leídas');
+        }
+    </script>
+</body>
+</html>

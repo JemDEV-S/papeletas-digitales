@@ -1,0 +1,699 @@
+=== 1. INFORMACI√ìN GENERAL ===
+Fecha de an√°lisis: ma.,  5 de ago. de 2025  9:51:46
+Proyecto: 
+
+--- Versi√≥n de Laravel ---
+        "laravel/framework": "^12.0",
+
+=== 2. ESTRUCTURA DE CARPETAS ===
+.
+./app
+./app/Enums
+./app/Http
+./app/Http/Controllers
+./app/Http/Controllers/Auth
+./app/Http/Middleware
+./app/Http/Requests
+./app/Http/Requests/Auth
+./app/Models
+./app/Providers
+./app/Repositories
+./app/Rules
+./app/Services
+./app/View
+./app/View/Components
+./bootstrap
+./bootstrap/cache
+./config
+./database
+./database/factories
+./database/migrations
+./database/seeders
+./node_modules
+./public
+./public/build
+./public/build/assets
+./resources
+./resources/css
+./resources/js
+./resources/views
+./resources/views/approvals
+./resources/views/auth
+./resources/views/components
+./resources/views/dashboard
+./resources/views/layouts
+./resources/views/permissions
+./resources/views/profile
+./resources/views/profile/partials
+./routes
+./storage
+./storage/app
+./storage/app/private
+./storage/app/private/signed-documents
+./storage/app/private/signed-documents/2025
+./storage/app/private/signed-documents/2025/07
+./storage/app/public
+./storage/app/public/permission-documents
+./storage/app/public/permission-documents/2025
+./storage/app/public/permission-documents/2025/07
+
+=== 3. MODELOS ENCONTRADOS ===
+Ì≥Ñ app/Models/Approval.php
+class Approval extends Model
+        return $this->belongsTo(PermissionRequest::class);
+        return $this->belongsTo(User::class, 'approver_id');
+
+Ì≥Ñ app/Models/Department.php
+class Department extends Model
+        return $this->belongsTo(Department::class, 'parent_department_id');
+        return $this->hasMany(Department::class, 'parent_department_id');
+        return $this->belongsTo(User::class, 'manager_id');
+        return $this->hasMany(User::class);
+
+Ì≥Ñ app/Models/DigitalSignature.php
+class DigitalSignature extends Model
+        return $this->belongsTo(PermissionRequest::class);
+        return $this->belongsTo(User::class);
+
+Ì≥Ñ app/Models/Document.php
+class Document extends Model
+        return $this->belongsTo(PermissionRequest::class);
+
+Ì≥Ñ app/Models/PermissionRequest.php
+class PermissionRequest extends Model
+        return $this->belongsTo(User::class);
+        return $this->belongsTo(PermissionType::class);
+        return $this->hasMany(Approval::class);
+        return $this->hasMany(Document::class);
+        return $this->hasMany(DigitalSignature::class);
+
+Ì≥Ñ app/Models/PermissionType.php
+class PermissionType extends Model
+        return $this->hasMany(PermissionRequest::class);
+
+Ì≥Ñ app/Models/Role.php
+class Role extends Model
+        return $this->hasMany(User::class);
+
+Ì≥Ñ app/Models/User.php
+class User extends Authenticatable
+        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Department::class);
+        return $this->belongsTo(User::class, 'immediate_supervisor_id');
+        return $this->hasMany(User::class, 'immediate_supervisor_id');
+        return $this->hasMany(PermissionRequest::class);
+        return $this->hasMany(Approval::class, 'approver_id');
+
+=== 4. CONTROLADORES ===
+ÌæÆ app/Http/Controllers/ApprovalController.php
+class ApprovalController extends Controller
+    public function __construct(
+    public function index(Request $request)
+    public function show(PermissionRequest $permission)
+    public function approve(ApprovePermissionRequest $request, PermissionRequest $permission)
+    public function reject(RejectPermissionRequest $request, PermissionRequest $permission)
+    public function bulkAction(BulkApprovalRequest $request)
+    public function reports(Request $request)
+    public function exportReport(Request $request)
+    public function getStats(): JsonResponse
+    public function getPermissionDetails(PermissionRequest $permission): JsonResponse
+
+ÌæÆ app/Http/Controllers/Auth/AuthenticatedSessionController.php
+class AuthenticatedSessionController extends Controller
+    public function create(): View
+    public function store(LoginRequest $request): RedirectResponse
+    public function destroy(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/ConfirmablePasswordController.php
+class ConfirmablePasswordController extends Controller
+    public function show(): View
+    public function store(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/EmailVerificationNotificationController.php
+class EmailVerificationNotificationController extends Controller
+    public function store(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/EmailVerificationPromptController.php
+class EmailVerificationPromptController extends Controller
+    public function __invoke(Request $request): RedirectResponse|View
+
+ÌæÆ app/Http/Controllers/Auth/NewPasswordController.php
+class NewPasswordController extends Controller
+    public function create(Request $request): View
+    public function store(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/PasswordController.php
+class PasswordController extends Controller
+    public function update(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/PasswordResetLinkController.php
+class PasswordResetLinkController extends Controller
+    public function create(): View
+    public function store(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/RegisteredUserController.php
+class RegisteredUserController extends Controller
+    public function create(): View
+    public function store(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Auth/VerifyEmailController.php
+class VerifyEmailController extends Controller
+    public function __invoke(EmailVerificationRequest $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/Controller.php
+abstract class Controller
+
+ÌæÆ app/Http/Controllers/DashboardController.php
+class DashboardController extends Controller
+    public function index()
+
+ÌæÆ app/Http/Controllers/PermissionRequestController.php
+class PermissionRequestController extends Controller
+    public function __construct(
+    public function index()
+    public function create()
+    public function store(StorePermissionRequestRequest $request)
+    public function show(PermissionRequest $permission)
+    public function edit(PermissionRequest $permission)
+    public function update(UpdatePermissionRequestRequest $request, PermissionRequest $permission)
+    public function submit(PermissionRequest $permission)
+    public function cancel(PermissionRequest $permission)
+    public function uploadDocument(Request $request, PermissionRequest $permission)
+    public function deleteDocument(PermissionRequest $permission, Document $document)
+    public function getPermissionTypeDetails(PermissionType $permissionType): JsonResponse
+    public function validateRequest(Request $request): JsonResponse
+    public function getUserStats(Request $request): JsonResponse
+
+ÌæÆ app/Http/Controllers/ProfileController.php
+class ProfileController extends Controller
+    public function edit(Request $request): View
+    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function destroy(Request $request): RedirectResponse
+
+ÌæÆ app/Http/Controllers/SignatureController.php
+class SignatureController extends Controller
+    public function __construct(PdfGeneratorService $pdfService)
+    public function showSignatureProcess(PermissionRequest $permission)
+    public function downloadUnsignedPdf(PermissionRequest $permission)
+    public function uploadSignedPdf(Request $request, PermissionRequest $permission)
+    public function submitSignedRequest(PermissionRequest $permission)
+    public function downloadSignedPdf(PermissionRequest $permission)
+    public function removeSignature(PermissionRequest $permission)
+    public function verifySignature(PermissionRequest $permission)
+
+=== 5. RUTAS ===
+--- routes/web.php ---
+<?php
+
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PermissionRequestController;
+use App\Http\Controllers\ApprovalController;
+use App\Http\Controllers\SignatureController; // Nuevo controlador para firma digital
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+// Rutas que requieren autenticaci√≥n
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+   
+    // Perfil de usuario
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+   
+    // Solicitudes de permisos - Todos los usuarios autenticados pueden acceder
+    Route::resource('permissions', PermissionRequestController::class);
+    Route::post('/permissions/{permission}/submit', [PermissionRequestController::class, 'submit'])->name('permissions.submit');
+    Route::post('/permissions/{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
+    Route::post('/permissions/{permission}/documents', [PermissionRequestController::class, 'uploadDocument'])->name('permissions.documents.upload');
+    Route::delete('/permissions/{permission}/documents/{document}', [PermissionRequestController::class, 'deleteDocument'])->name('permissions.documents.delete');
+    
+    // === NUEVAS RUTAS PARA FIRMA DIGITAL ===
+    Route::prefix('permissions/{permission}')->name('permissions.')->group(function () {
+        
+        // Proceso de firma digital
+        Route::get('/signature-process', [SignatureController::class, 'showSignatureProcess'])
+            ->name('signature-process'); // Solo el due√±o puede firmar
+        
+        // Descargar PDF sin firmar
+        Route::get('/download-unsigned-pdf', [SignatureController::class, 'downloadUnsignedPdf'])
+            ->name('download-unsigned-pdf');
+        
+        // Subir PDF firmado
+        Route::post('/upload-signed-pdf', [SignatureController::class, 'uploadSignedPdf'])
+            ->name('upload-signed-pdf');
+        
+        // Enviar solicitud firmada para aprobaci√≥n
+        Route::post('/submit-signed', [SignatureController::class, 'submitSignedRequest'])
+            ->name('submit-signed');
+        
+        // Descargar PDF firmado
+        Route::get('/download-signed-pdf', [SignatureController::class, 'downloadSignedPdf'])
+            ->name('download-signed-pdf'); // Empleado, jefes y admin pueden descargar
+        
+        // Remover firma digital
+        Route::post('/remove-signature', [SignatureController::class, 'removeSignature'])
+            ->name('remove-signature');
+        
+        // Verificar firma digital (API para AJAX)
+        Route::get('/verify-signature', [SignatureController::class, 'verifySignature'])
+            ->name('verify-signature')
+            ->middleware('can:view,permission');
+    });
+    
+    // === FIN NUEVAS RUTAS PARA FIRMA DIGITAL ===
+   
+    // Aprobaciones - Solo jefes inmediatos, RRHH y admin
+    Route::middleware(['role:jefe_inmediato,jefe_rrhh,admin'])->group(function () {
+        Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+        Route::get('/approvals/{permission}', [ApprovalController::class, 'show'])->name('approvals.show');
+        Route::post('/approvals/{permission}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
+        Route::post('/approvals/{permission}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
+    });
+   
+    // Reportes - Solo para RRHH y Admin
+    Route::middleware(['role:jefe_rrhh,admin'])->group(function () {
+        Route::get('/reports', [ApprovalController::class, 'reports'])->name('reports.index');
+        
+        // === REPORTES DE FIRMA DIGITAL ===
+        Route::get('/reports/digital-signatures', [SignatureController::class, 'signaturesReport'])
+            ->name('reports.digital-signatures');
+        Route::get('/reports/signature-integrity', [SignatureController::class, 'integrityReport'])
+            ->name('reports.signature-integrity');
+    });
+    
+    // === RUTAS ADMINISTRATIVAS PARA FIRMA DIGITAL (Solo Admin) ===
+    Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        
+        // Gesti√≥n de firmas digitales
+        Route::get('/signatures', [SignatureController::class, 'adminIndex'])->name('signatures.index');
+        Route::post('/signatures/{signature}/invalidate', [SignatureController::class, 'invalidateSignature'])->name('signatures.invalidate');
+        Route::get('/signatures/cleanup-old-files', [SignatureController::class, 'cleanupOldFiles'])->name('signatures.cleanup');
+        
+        // Verificaci√≥n masiva
+        Route::post('/signatures/verify-all', [SignatureController::class, 'verifyAllSignatures'])->name('signatures.verify-all');
+        
+        // Estad√≠sticas de uso
+        Route::get('/signatures/statistics', [SignatureController::class, 'signaturesStatistics'])->name('signatures.statistics');
+    });
+});
+
+require __DIR__.'/auth.php';
+=== 6. MIGRACIONES ===
+total 56
+drwxr-xr-x 1 PC_OTI_03+PracticanteOTI 197121    0 jul. 31 11:01 ./
+drwxr-xr-x 1 PC_OTI_03+PracticanteOTI 197121    0 jul. 30 11:24 ../
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1473 jul. 11 02:25 0001_01_01_000000_create_users_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121  849 jul. 11 02:25 0001_01_01_000001_create_cache_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1812 jul. 11 02:25 0001_01_01_000002_create_jobs_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121  668 jul. 30 11:50 2025_07_30_164711_create_roles_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1028 jul. 30 11:50 2025_07_30_164716_create_departments_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1156 jul. 30 11:51 2025_07_30_164721_create_permission_types_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1709 jul. 30 11:51 2025_07_30_164731_create_permission_requests_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1359 jul. 30 11:54 2025_07_30_164735_create_approvals_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 1192 jul. 30 11:54 2025_07_30_164740_create_documents_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 2190 jul. 30 11:51 2025_07_30_164755_add_fields_to_users_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121  863 jul. 30 12:06 2025_07_30_170646_create_personal_access_tokens_table.php
+-rw-r--r-- 1 PC_OTI_03+PracticanteOTI 197121 2447 jul. 31 11:02 2025_07_31_160125_create_digital_signatures_table.php
+
+--- Contenido de √∫ltimas migraciones ---
+Ì≥ã database/migrations/2025_07_31_160125_create_digital_signatures_table.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('digital_signatures', function (Blueprint $table) {
+            $table->id();
+            
+            // Relaciones
+            $table->foreignId('permission_request_id')
+                  ->constrained('permission_requests')
+                  ->onDelete('cascade');
+            $table->foreignId('user_id')
+                  ->constrained('users')
+                  ->onDelete('cascade');
+            
+            // Informaci√≥n b√°sica de la firma
+            $table->string('signature_type'); // onpe_employee_signature, onpe_supervisor_signature, etc.
+            $table->string('certificate_serial')->nullable(); // N√∫mero de serie del certificado
+            $table->string('signature_hash'); // SHA256 del documento firmado
+            $table->string('signature_algorithm')->nullable(); // Algoritmo usado (SHA256withRSA, etc.)
+            $table->string('signature_timestamp')->nullable(); // Timestamp de la firma
+            $table->text('signer_dn')->nullable(); // Distinguished Name del firmante
+            
+            // Fechas
+            $table->timestamp('signed_at'); // Fecha/hora de la firma
+            
+            // Datos del certificado y metadatos (JSON)
+            $table->json('certificate_data')->nullable(); // Informaci√≥n del certificado
+            $table->json('signature_metadata')->nullable(); // Metadatos adicionales
+            
+            // Ruta del documento firmado
+            $table->string('document_path')->nullable(); // Ruta del PDF firmado
+            
+            // Estado de la firma
+            $table->boolean('is_valid')->default(true); // Si la firma es v√°lida
+            
+            // Timestamps autom√°ticos
+            $table->timestamps();
+            
+            // √çndices para optimizar consultas
+            $table->index(['permission_request_id', 'signature_type']);
+            $table->index(['user_id', 'signed_at']);
+            $table->index(['signature_type', 'is_valid']);
+            $table->index('certificate_serial');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('digital_signatures');
+    }
+};
+Ì≥ã database/migrations/2025_07_30_170646_create_personal_access_tokens_table.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('personal_access_tokens', function (Blueprint $table) {
+            $table->id();
+            $table->morphs('tokenable');
+            $table->text('name');
+            $table->string('token', 64)->unique();
+            $table->text('abilities')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expires_at')->nullable()->index();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('personal_access_tokens');
+    }
+};
+
+Ì≥ã database/migrations/2025_07_30_164740_create_documents_table.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('documents', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('permission_request_id');
+            $table->string('original_name');
+            $table->string('stored_name');
+            $table->string('file_path');
+            $table->string('mime_type');
+            $table->integer('file_size');
+            $table->string('document_type'); // certificado_medico, citacion, etc.
+            $table->string('file_hash'); // Para verificar integridad
+            $table->timestamps();
+            
+            // Foreign keys
+            $table->foreign('permission_request_id')->references('id')->on('permission_requests');
+            
+            // Indexes
+            $table->index('permission_request_id');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('documents');
+    }
+};
+Ì≥ã database/migrations/2025_07_30_164735_create_approvals_table.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('approvals', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('permission_request_id');
+            $table->unsignedBigInteger('approver_id');
+            $table->integer('approval_level'); // 1: Jefe Inmediato, 2: Jefe RRHH
+            $table->enum('status', ['pending', 'approved', 'rejected']);
+            $table->text('comments')->nullable();
+            $table->datetime('approved_at')->nullable();
+            $table->string('digital_signature_hash')->nullable();
+            $table->timestamps();
+            
+            // Foreign keys
+            $table->foreign('permission_request_id')->references('id')->on('permission_requests');
+            $table->foreign('approver_id')->references('id')->on('users');
+            
+            // Indexes
+            $table->index(['permission_request_id', 'approval_level']);
+            $table->index(['approver_id', 'status']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('approvals');
+    }
+};
+Ì≥ã database/migrations/2025_07_30_164731_create_permission_requests_table.php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('permission_requests', function (Blueprint $table) {
+            $table->id();
+            $table->string('request_number')->unique();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('permission_type_id');
+            $table->datetime('start_datetime');
+            $table->datetime('end_datetime');
+            $table->decimal('requested_hours', 5, 2);
+            $table->text('reason');
+            $table->enum('status', [
+                'draft',
+                'pending_immediate_boss',
+                'pending_hr',
+                'approved',
+                'rejected',
+                'cancelled'
+            ])->default('draft');
+            $table->json('metadata')->nullable(); // Para datos adicionales seg√∫n el tipo
+            $table->datetime('submitted_at')->nullable();
+            $table->integer('current_approval_level')->default(0);
+            $table->timestamps();
+            
+            // Foreign keys
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('permission_type_id')->references('id')->on('permission_types');
+            
+            // Indexes
+            $table->index(['user_id', 'status']);
+            $table->index('submitted_at');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('permission_requests');
+    }
+};
+=== 7. CONFIGURACI√ìN IMPORTANTE ===
+--- Database Config ---
+    'default' => env('DB_CONNECTION', 'sqlite'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Database Connections
+    |--------------------------------------------------------------------------
+    |
+    | Below are all of the database connections defined for your application.
+    | An example configuration is provided for each database system which
+    | is supported by Laravel. You're free to add / remove connections.
+    |
+    */
+
+    'connections' => [
+
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'url' => env('DB_URL'),
+            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'prefix' => '',
+            'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
+--
+        'default' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_DB', '0'),
+        ],
+
+        'cache' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_CACHE_DB', '1'),
+        ],
+
+    ],
+
+];
+
+=== 8. MIDDLEWARE Y PROVIDERS ===
+--- Middleware ---
+
+--- Service Providers ---
+app/Providers/AppServiceProvider.php
+
+=== 9. ESTRUCTURA DE VISTAS ===
+resources/views/approvals/index.blade.php
+resources/views/approvals/reports.blade.php
+resources/views/approvals/show.blade.php
+resources/views/auth/confirm-password.blade.php
+resources/views/auth/forgot-password.blade.php
+resources/views/auth/login.blade.php
+resources/views/auth/register.blade.php
+resources/views/auth/reset-password.blade.php
+resources/views/auth/verify-email.blade.php
+resources/views/components/application-logo.blade.php
+resources/views/components/auth-session-status.blade.php
+resources/views/components/danger-button.blade.php
+resources/views/components/dropdown-link.blade.php
+resources/views/components/dropdown.blade.php
+resources/views/components/input-error.blade.php
+resources/views/components/input-label.blade.php
+resources/views/components/modal.blade.php
+resources/views/components/nav-link.blade.php
+resources/views/components/primary-button.blade.php
+resources/views/components/responsive-nav-link.blade.php
+resources/views/components/secondary-button.blade.php
+resources/views/components/text-input.blade.php
+resources/views/dashboard/index.blade.php
+resources/views/dashboard.blade.php
+resources/views/layouts/app.blade.php
+resources/views/layouts/guest.blade.php
+resources/views/layouts/navigation.blade.php
+resources/views/permissions/create.blade.php
+resources/views/permissions/edit.blade.php
+resources/views/permissions/index.blade.php
+
+=== 10. FRONTEND Y ASSETS ===
+--- package.json ---
+{
+    "$schema": "https://json.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.2",
+        "@tailwindcss/vite": "^4.0.0",
+        "alpinejs": "^3.4.2",
+        "autoprefixer": "^10.4.2",
+        "axios": "^1.8.2",
+        "concurrently": "^9.0.1",
+        "laravel-vite-plugin": "^2.0.0",
+        "postcss": "^8.4.31",
+        "tailwindcss": "^3.1.0",
+        "vite": "^7.0.4"
+    }
+}
+
+--- Archivos CSS/JS ---
+resources/css/app.css
+resources/js/app.js
+resources/js/bootstrap.js
+
+=== 11. COMANDOS ARTISAN PERSONALIZADOS ===
+
+=== 12. JOBS Y COLAS ===
+
+=== 13. RESUMEN ESTAD√çSTICO ===
+Total de archivos PHP:
+228
+
+Total de modelos:
+8
+
+Total de controladores:
+15
+
+Total de migraciones:
+12
+

@@ -1,0 +1,529 @@
+================================================================================
+                    DOCUMENTACIÓN TÉCNICA - INTEGRACIÓN FIRMA DIGITAL
+                         Sistema de Papeletas con FIRMA PERÚ
+================================================================================
+
+FECHA DE IMPLEMENTACIÓN: Agosto 2025
+VERSIÓN DEL SISTEMA: Laravel 10.x
+PLATAFORMA: FIRMA PERÚ (Plataforma Nacional de Firma Digital)
+
+================================================================================
+                                    ÍNDICE
+================================================================================
+
+1. RESUMEN EJECUTIVO
+2. ARQUITECTURA DE LA SOLUCIÓN
+3. COMPONENTES IMPLEMENTADOS
+4. FLUJO DE FIRMA DIGITAL
+5. CONFIGURACIÓN DEL SISTEMA
+6. ARCHIVOS Y RUTAS
+7. MODELOS DE BASE DE DATOS
+8. ENDPOINTS API
+9. FRONTEND (JavaScript)
+10. PROBLEMAS COMUNES Y SOLUCIONES
+11. LOGGING Y MONITOREO
+12. SEGURIDAD
+13. MANTENIMIENTO
+14. CONTACTO Y SOPORTE
+
+================================================================================
+                                1. RESUMEN EJECUTIVO
+================================================================================
+
+El sistema de papeletas ha sido integrado exitosamente con la Plataforma Nacional
+de Firma Digital (FIRMA PERÚ) del Estado Peruano, permitiendo la firma digital
+de solicitudes de permisos en tres niveles:
+
+• NIVEL 1: Firma del empleado (quien solicita el permiso)
+• NIVEL 2: Firma del jefe inmediato (aprobación supervisora)
+• NIVEL 3: Firma del jefe de RRHH (aprobación final)
+
+La implementación garantiza:
+✓ Validez legal de las firmas digitales
+✓ Integridad de los documentos firmados
+✓ Trazabilidad completa del proceso
+✓ Cumplimiento con estándares nacionales
+
+================================================================================
+                            2. ARQUITECTURA DE LA SOLUCIÓN
+================================================================================
+
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   FRONTEND      │    │    BACKEND       │    │   FIRMA PERÚ    │
+│   (Browser)     │    │   (Laravel)      │    │   (External)    │
+├─────────────────┤    ├──────────────────┤    ├─────────────────┤
+│ • JavaScript    │◄──►│ • Controller     │◄──►│ • Token Service │
+│ • Firma Peru JS │    │ • Service        │    │ • Sign Service  │
+│ • UI Controls   │    │ • Models         │    │ • Upload API    │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+
+TECNOLOGÍAS UTILIZADAS:
+• Backend: PHP 8.1+ / Laravel 10.x
+• Frontend: JavaScript ES6+ / Tailwind CSS
+• Base de datos: MySQL 8.0+
+• Firma digital: FIRMA PERÚ (Componente Web)
+• Formatos: PDF (PAdES), certificados X.509
+
+================================================================================
+                            3. COMPONENTES IMPLEMENTADOS
+================================================================================
+
+3.1. CONTROLADOR PRINCIPAL
+═══════════════════════════
+Archivo: app/Http/Controllers/Api/FirmaPeruController.php
+
+Métodos principales:
+• getSignatureParameters()     - Parámetros para FIRMA PERÚ
+• getDocument()               - Descarga documento original
+• getSignedDocument()         - Descarga documento firmado
+• uploadSignedDocument()      - Recibe documento desde FIRMA PERÚ
+• initiateEmployeeSignature() - Inicia firma empleado
+• initiateLevel1Signature()   - Inicia firma jefe inmediato
+• initiateLevel2Signature()   - Inicia firma RRHH
+• getSignatureStatus()        - Estado de firmas
+• verifyAllSignatures()       - Verificación de integridad
+
+3.2. SERVICIO DE LÓGICA DE NEGOCIO
+══════════════════════════════════
+Archivo: app/Services/FirmaPeruService.php
+
+Responsabilidades:
+• Generación de tokens JWT
+• Preparación de parámetros de firma
+• Procesamiento de documentos firmados
+• Gestión de caché de sesiones
+• Sistema de fallback para recuperación
+• Validación de integridad
+
+3.3. MODELOS DE BASE DE DATOS
+═════════════════════════════
+• PermissionRequest - Solicitudes de permisos
+• DigitalSignature  - Registro de firmas digitales
+• User             - Usuarios del sistema
+
+3.4. FRONTEND JAVASCRIPT
+════════════════════════
+Archivo: resources/js/firma-peru.js
+
+Clase: FirmaPeruIntegration
+• Gestión del componente FIRMA PERÚ
+• Callbacks de eventos de firma
+• Interfaz de usuario reactiva
+• Manejo de errores y estados
+
+================================================================================
+                            4. FLUJO DE FIRMA DIGITAL
+================================================================================
+
+4.1. PROCESO COMPLETO DE FIRMA
+══════════════════════════════
+
+1. PREPARACIÓN
+   ┌─────────────────────────────────────────────────────────────┐
+   │ • Usuario hace clic en "Firmar"                             │
+   │ • Sistema genera token único                                │
+   │ • Se crean parámetros de firma                              │
+   │ • Se almacena información en caché                          │
+   └─────────────────────────────────────────────────────────────┘
+                                   ↓
+2. INVOCACIÓN DE FIRMA PERÚ
+   ┌─────────────────────────────────────────────────────────────┐
+   │ • Se carga componente FIRMA PERÚ                            │
+   │ • FIRMA PERÚ solicita parámetros                            │
+   │ • Sistema devuelve parámetros codificados en Base64         │
+   │ • FIRMA PERÚ descarga documento original                    │
+   └─────────────────────────────────────────────────────────────┘
+                                   ↓
+3. PROCESO DE FIRMA
+   ┌─────────────────────────────────────────────────────────────┐
+   │ • Usuario selecciona certificado digital                    │
+   │ • Se firma el documento con PAdES                           │
+   │ • Se genera documento firmado con sello de tiempo           │
+   └─────────────────────────────────────────────────────────────┘
+                                   ↓
+4. RETORNO AL SISTEMA
+   ┌─────────────────────────────────────────────────────────────┐
+   │ • FIRMA PERÚ envía documento firmado                        │
+   │ • Sistema valida y almacena la firma                        │
+   │ • Se actualiza estado de la solicitud                       │
+   │ • Se registra en auditoría                                  │
+   └─────────────────────────────────────────────────────────────┘
+
+4.2. ESTADOS DE LA SOLICITUD
+════════════════════════════
+• draft                    → Sin firmar (empleado puede firmar)
+• pending_immediate_boss   → Firmado por empleado, pendiente jefe
+• pending_hr              → Firmado por jefe, pendiente RRHH
+• approved                → Completamente firmado
+
+4.3. TIPOS DE FIRMA
+═══════════════════
+• employee           → Firma del empleado solicitante
+• level1_supervisor  → Firma del jefe inmediato
+• level2_hr         → Firma del jefe de RRHH
+
+================================================================================
+                            5. CONFIGURACIÓN DEL SISTEMA
+================================================================================
+
+5.1. ARCHIVO DE CREDENCIALES
+════════════════════════════
+Archivo: fwAuthorization.json (raíz del proyecto)
+
+{
+    "client_id": "tu_client_id_aqui",
+    "client_secret": "tu_client_secret_aqui",
+    "token_url": "https://apps.firmaperu.gob.pe/admin/api/security/generate-token"
+}
+
+IMPORTANTE: Este archivo NO debe commitirse al repositorio por seguridad.
+
+5.2. VARIABLES DE ENTORNO
+═════════════════════════
+En archivo .env:
+
+# Firma Perú
+FIRMA_PERU_VERIFY_SSL=true
+FIRMA_PERU_DEBUG=false
+
+5.3. CONFIGURACIÓN DE CACHÉ
+═══════════════════════════
+El sistema utiliza caché de Laravel para:
+• Tokens de sesión de firma (30 minutos TTL)
+• Índices por permission_id para búsqueda rápida
+• Datos de fallback para recuperación
+
+Configuración recomendada: Redis o Memcached en producción
+
+================================================================================
+                                6. ARCHIVOS Y RUTAS
+================================================================================
+
+6.1. ESTRUCTURA DE ARCHIVOS
+═══════════════════════════
+papeletas-digitales/
+├── app/
+│   ├── Http/Controllers/Api/
+│   │   └── FirmaPeruController.php      ← Controlador principal
+│   ├── Services/
+│   │   └── FirmaPeruService.php         ← Lógica de negocio
+│   └── Models/
+│       ├── DigitalSignature.php         ← Modelo de firmas
+│       └── PermissionRequest.php        ← Modelo de solicitudes
+├── resources/js/
+│   └── firma-peru.js                    ← Frontend JavaScript
+├── routes/
+│   ├── api.php                          ← Rutas API
+│   └── web.php                          ← Rutas web
+├── storage/
+│   └── app/private/signed-documents/    ← Documentos firmados
+└── fwAuthorization.json                 ← Credenciales (NO versionar)
+
+6.2. RUTAS API
+══════════════
+Grupo: /api/firma-peru/
+
+POST   /param                           → Parámetros para FIRMA PERÚ
+GET    /document/{permission}           → Descargar documento original
+GET    /signed-document/{permission}    → Descargar documento firmado
+POST   /upload/{permission}             → Recibir documento firmado
+
+6.3. RUTAS WEB
+══════════════
+Grupo: /api/firma-peru/ (autenticadas)
+
+POST   /initiate-employee/{permission}  → Iniciar firma empleado
+POST   /initiate-level1/{permission}    → Iniciar firma jefe inmediato
+POST   /initiate-level2/{permission}    → Iniciar firma RRHH
+GET    /signature-status/{permission}   → Estado de firmas
+GET    /verify-signatures/{permission}  → Verificar integridad
+
+================================================================================
+                            7. MODELOS DE BASE DE DATOS
+================================================================================
+
+7.1. TABLA: digital_signatures
+══════════════════════════════
+CREATE TABLE `digital_signatures` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `permission_request_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL,
+  `signature_type` enum('employee','level1_supervisor','level2_hr') NOT NULL,
+  `signature_hash` varchar(255) NOT NULL,
+  `signed_at` timestamp NOT NULL,
+  `document_path` varchar(255) NOT NULL,
+  `is_valid` tinyint(1) NOT NULL DEFAULT '1',
+  `signature_metadata` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `digital_signatures_permission_request_id_foreign` (`permission_request_id`),
+  KEY `digital_signatures_user_id_foreign` (`user_id`),
+  KEY `digital_signatures_signature_type_index` (`signature_type`),
+  KEY `digital_signatures_signed_at_index` (`signed_at`)
+);
+
+7.2. CAMPOS DE PERMISSION_REQUESTS (AÑADIDOS)
+═════════════════════════════════════════════
+• current_approval_level (int) - Nivel actual de aprobación (1, 2, 3)
+• has_digital_signatures (boolean) - Indica si tiene firmas digitales
+
+7.3. RELACIONES
+═══════════════
+• PermissionRequest hasMany DigitalSignature
+• DigitalSignature belongsTo User
+• DigitalSignature belongsTo PermissionRequest
+
+================================================================================
+                                8. ENDPOINTS API
+================================================================================
+
+8.1. POST /api/firma-peru/param
+═══════════════════════════════
+Propósito: Proporcionar parámetros de firma a FIRMA PERÚ
+
+Request:
+Content-Type: application/x-www-form-urlencoded
+param_token: string (token único de la sesión)
+
+Response:
+Content-Type: text/plain; charset=utf-8
+Body: JSON codificado en Base64 con parámetros de firma
+
+8.2. GET /api/firma-peru/document/{permission}?token={token}
+═══════════════════════════════════════════════════════════
+Propósito: Descargar documento original para firma
+
+Response:
+Content-Type: application/pdf
+Body: PDF original sin firmar
+
+8.3. POST /api/firma-peru/upload/{permission}
+════════════════════════════════════════════
+Propósito: Recibir documento firmado desde FIRMA PERÚ
+
+Request:
+Content-Type: multipart/form-data
+signed_file: archivo PDF firmado
+
+Response:
+Content-Type: application/json
+{
+    "success": true,
+    "message": "Documento firmado correctamente",
+    "signature_id": 123,
+    "next_stage": "level1_approval"
+}
+
+8.4. POST /api/firma-peru/initiate-employee/{permission}
+═══════════════════════════════════════════════════════
+Propósito: Iniciar proceso de firma del empleado
+
+Response:
+{
+    "success": true,
+    "params": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "param_token": "abc123...",
+    "js_url": "https://apps.firmaperu.gob.pe/...",
+    "port": 48596
+}
+
+================================================================================
+                            9. FRONTEND (JavaScript)
+================================================================================
+9.1. CLASE PRINCIPAL: FirmaPeruIntegration
+══════════════════════════════════════════
+Archivo: resources/js/firma-peru.js
+
+Métodos principales:
+• init()                      → Inicialización del componente
+• loadFirmaPeruScript()       → Carga script de FIRMA PERÚ
+• waitForFirmaPeruComponent() → Espera disponibilidad del componente
+• startSignatureProcess()     → Inicia proceso de firma
+• onSignatureOk()            → Callback de firma exitosa
+• onSignatureCancel()        → Callback de firma cancelada
+
+9.2. EVENTOS DE CICLO DE VIDA
+═════════════════════════════
+1. signatureInit()   → Proceso iniciado
+2. signatureOk()     → Firma completada exitosamente
+3. signatureCancel() → Proceso cancelado por usuario
+
+9.3. CONFIGURACIÓN DEL COMPONENTE
+══════════════════════════════════
+Puerto recomendado: 48596
+URL del servicio: https://apps.firmaperu.gob.pe/web/clienteweb/firmaperu.min.js
+
+Variables globales requeridas:
+• window.jqFirmaPeru    → jQuery para FIRMA PERÚ
+• window.startSignature → Función principal de firma
+• window.sendParam      → Callback para obtener parámetros
+
+9.4. HTML REQUERIDO
+═══════════════════
+<div id="addComponent" style="display:none;"></div>
+
+Este div es requerido por el componente FIRMA PERÚ.
+
+================================================================================
+                        10. PROBLEMAS COMUNES Y SOLUCIONES
+================================================================================
+
+10.1. ERROR: "El componente de FIRMA PERÚ no está disponible"
+═════════════════════════════════════════════════════════════
+CAUSA: Script no cargado o funciones no disponibles
+SOLUCIÓN:
+• Verificar conectividad a apps.firmaperu.gob.pe
+• Comprobar que no hay bloqueadores de script
+• Revisar console.log en navegador
+• Usar navegador compatible (Edge recomendado)
+
+10.2. ERROR: "HTTP 400" al enviar documento firmado
+═══════════════════════════════════════════════════
+CAUSA: user_id null en datos de caché
+SOLUCIÓN: Implementado sistema de fallback automático que:
+• Detecta when user_id es null
+• Determina usuario por estado de solicitud
+• Usa rol del usuario para asignar correctamente
+
+10.3. ERROR: "No se encontraron certificados"
+════════════════════════════════════════════
+CAUSA: Filtro de certificados demasiado restrictivo
+SOLUCIÓN: Configurado filtro universal ".*" que acepta:
+• Certificados FIR (Firma)
+• Certificados FAU (Autenticación)
+• Todos los certificados válidos
+
+10.4. ERROR: "Token expirado"
+═════════════════════════════
+CAUSA: Token de sesión expirado (30 minutos)
+SOLUCIÓN:
+• Reiniciar proceso de firma
+• Los tokens se renuevan automáticamente
+• Verificar sincronización de tiempo del servidor
+
+================================================================================
+                            11. LOGGING Y MONITOREO
+================================================================================
+
+11.1. ARCHIVOS DE LOG
+════════════════════
+• storage/logs/laravel.log → Log principal del sistema
+• FirmadorClienteWeb.log   → Log del componente FIRMA PERÚ (cliente)
+
+11.2. EVENTOS REGISTRADOS
+═════════════════════════
+• Generación de tokens JWT
+• Creación de parámetros de firma
+• Recepción de documentos firmados
+• Errores de procesamiento
+• Uso de sistema de fallback
+• Verificaciones de integridad
+
+11.3. MÉTRICAS IMPORTANTES
+══════════════════════════
+• Tiempo de respuesta de FIRMA PERÚ
+• Tasa de éxito de firmas
+• Errores de autenticación
+• Uso del sistema de fallback
+
+11.4. LOGS DE EJEMPLO
+════════════════════
+[2025-08-15 20:34:07] INFO: Token JWT generado exitosamente
+[2025-08-15 20:34:16] WARNING: user_id es null, usando fallback
+[2025-08-15 20:34:16] INFO: Documento firmado procesado exitosamente
+
+================================================================================
+                                12. SEGURIDAD
+================================================================================
+
+12.1. MEDIDAS IMPLEMENTADAS
+═══════════════════════════
+• Tokens únicos de sesión con expiración (30 min)
+• Validación de permisos por usuario y rol
+• Verificación de integridad SHA-256
+• Almacenamiento seguro de documentos firmados
+• Validación de tipos de archivo (solo PDF)
+• Logging completo para auditoría
+
+12.2. ARCHIVOS SENSIBLES
+═══════════════════════
+• fwAuthorization.json → NO versionar en Git
+• Documentos firmados  → Almacenados en storage/app/private/
+• Logs del sistema     → Rotar periódicamente
+
+12.3. RECOMENDACIONES
+════════════════════
+• Usar HTTPS en producción
+• Configurar firewall para puerto 48596
+• Backup regular de documentos firmados
+• Monitoreo de accesos no autorizados
+• Actualización periódica de certificados
+
+================================================================================
+                                13. MANTENIMIENTO
+================================================================================
+
+13.1. TAREAS PERIÓDICAS
+══════════════════════
+• Limpieza de tokens expirados en caché
+• Rotación de logs (semanal)
+• Backup de documentos firmados (diario)
+• Verificación de conectividad con FIRMA PERÚ
+• Actualización de credenciales (anual)
+
+13.2. MONITOREO DE SALUD
+═══════════════════════
+Indicadores clave:
+• Tiempo de respuesta < 5 segundos
+• Tasa de éxito > 95%
+• Disponibilidad de FIRMA PERÚ > 99%
+• Espacio en disco para documentos
+
+13.3. BACKUP Y RECUPERACIÓN
+═══════════════════════════
+Elementos críticos a respaldar:
+• Base de datos (tabla digital_signatures)
+• Documentos firmados (storage/app/private/)
+• Archivo de credenciales
+• Configuración del sistema
+
+================================================================================
+                            14. CONTACTO Y SOPORTE
+================================================================================
+
+14.1. SOPORTE TÉCNICO FIRMA PERÚ
+═══════════════════════════════
+• Portal: https://www.firmaperu.gob.pe/
+• Documentación: Incluida en este proyecto (firmador-componente-web.pdf)
+• Soporte: Mesa de ayuda SGTD-PCM
+
+14.2. DOCUMENTACIÓN ADICIONAL
+════════════════════════════
+• Manual de usuario FIRMA PERÚ
+• Guía de certificados digitales
+• Estándares PAdES y XAdES
+• Normativa legal peruana
+
+14.3. CONTACTO DEL PROYECTO
+══════════════════════════
+Proyecto: Sistema de Papeletas Digitales
+Implementación: Agosto 2025
+Tecnología: Laravel + FIRMA PERÚ
+
+================================================================================
+                                NOTAS FINALES
+================================================================================
+
+Esta integración cumple con todos los estándares nacionales para firma digital
+en el Perú y garantiza la validez legal de los documentos firmados según la
+Ley N° 27269 - Ley de Firmas y Certificados Digitales.
+
+El sistema está preparado para escalabilidad y mantiene compatibilidad con
+futuras actualizaciones de la Plataforma FIRMA PERÚ.
+
+FECHA DE DOCUMENTACIÓN: 15 de Agosto de 2025
+VERSIÓN DEL DOCUMENTO: 1.0
+ESTADO: IMPLEMENTACIÓN COMPLETADA Y FUNCIONAL
+
+================================================================================

@@ -1,0 +1,28 @@
+{
+    "name": "papeletas-digitales/zkteco-agent",
+    "description": "Agente PHP para dispositivos ZKTeco G3",
+    "type": "project",
+    "require": {
+        "php": "^8.1",
+        "coding-libs/zkteco-php": "dev-master",
+        "ext-sqlite3": "*",
+        "guzzlehttp/guzzle": "^7.0",
+        "symfony/console": "^6.0",
+        "monolog/monolog": "^3.0",
+        "vlucas/phpdotenv": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ZktecoAgent\\": "src/"
+        }
+    },
+    "scripts": {
+        "agent": "php agent.php",
+        "install-agent": "php install.php"
+    },
+    "config": {
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

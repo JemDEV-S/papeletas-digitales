@@ -1,0 +1,201 @@
+================================================================================
+                    NUEVA FUNCIONALIDAD: SEGUIMIENTO FÍSICO DE PERMISOS
+================================================================================
+
+📋 RESUMEN DEL PROYECTO:
+Se implementó una nueva funcionalidad para el sistema de papeletas digitales que 
+permite realizar un seguimiento físico real de las salidas y entradas de los 
+empleados, utilizando el escaneo del DNI con código de barras.
+
+🎯 OBJETIVO PRINCIPAL:
+Transformar el sistema de solicitudes teóricas a un control físico real, donde
+después de aprobar una solicitud de permiso, se pueda registrar automáticamente
+la salida y entrada del empleado mediante el escaneo de su DNI.
+
+================================================================================
+                                FLUJO MEJORADO
+================================================================================
+
+🔄 ANTES (Sistema anterior):
+1. Empleado solicita permiso con fechas/horas específicas
+2. Se aprueban las fechas/horas planificadas  
+3. Sistema quedaba en estado "aprobado" sin seguimiento real
+4. No había control físico de cumplimiento
+
+✅ AHORA (Sistema refactorizado):
+1. Empleado solicita permiso SOLO con: tipo + motivo + documentos
+2. Proceso de aprobación normal (jefe inmediato → RRHH)
+3. Al aprobar: se crea automáticamente un registro de seguimiento
+4. JEFE DE RRHH registra físicamente:
+   - Salida del empleado (escaneo DNI)
+   - Entrada del empleado (escaneo DNI)
+5. Sistema calcula automáticamente tiempo real utilizado
+6. Control de retrasos y alertas automáticas
+
+================================================================================
+                             COMPONENTES IMPLEMENTADOS
+================================================================================
+
+🗃️ BASE DE DATOS:
+┌─ Tabla: permission_requests (limpiada)
+│  ├── Removidos: start_datetime, end_datetime, requested_hours
+│  └── Agregado: estado 'in_progress'
+│
+└─ Tabla: permission_trackings (NUEVA)
+   ├── permission_request_id (FK)
+   ├── employee_dni (para escaneo)
+   ├── departure_datetime (salida real)
+   ├── return_datetime (entrada real)
+   ├── actual_hours_used (cálculo automático)
+   ├── tracking_status (pending/out/returned/overdue)
+   ├── registered_by_user_id (jefe RRHH)
+   └── notes (observaciones)
+
+🏗️ BACKEND:
+┌─ Modelos
+│  ├── PermissionRequest (limpiado, sin campos datetime)
+│  ├── PermissionTracking (NUEVO, con lógica de seguimiento)
+│  └── Relaciones bidireccionales
+│
+├─ Controladores
+│  ├── PermissionTrackingController (NUEVO)
+│  │  ├── API para escaneo DNI
+│  │  ├── Registro de salida/entrada
+│  │  ├── Dashboard RRHH
+│  │  └── Control de retrasos
+│  │
+│  └── Requests de validación (simplificados)
+│     ├── Solo validan: tipo + motivo + documentos
+│     └── Sin validaciones de fechas/horas
+│
+└─ Servicios
+   ├── PermissionService (refactorizado)
+   └── Sin lógica de cálculo de horas
+
+🎨 FRONTEND:
+┌─ Formularios (simplificados)
+│  ├── create.blade.php: Solo tipo + motivo + documentos
+│  ├── edit.blade.php: Mismos campos básicos
+│  └── Sin selectores de fecha/hora
+│
+├─ Vistas de seguimiento
+│  ├── show.blade.php: Muestra estado de tracking
+│  ├── index.blade.php: Lista con seguimiento
+│  └── dashboard: Integrado con tracking
+│
+└─ PDF Template
+   ├── Sin fechas planificadas
+   └── Con datos de seguimiento real
+
+================================================================================
+                                FUNCIONALIDADES
+================================================================================
+
+🔍 ESCANEO DE DNI:
+- Endpoint API: /api/tracking/scan-dni
+- Busca permisos activos por DNI
+- Identifica si necesita registrar salida o entrada
+- Validación automática de permisos aprobados
+
+📊 DASHBOARD JEFE RRHH:
+- Vista en tiempo real de todos los seguimientos
+- Empleados pendientes de salir
+- Empleados actualmente fuera de oficina
+- Empleados con retrasos en el regreso
+- Interfaz de escucha activa para escaneo
+
+⏰ CONTROL AUTOMÁTICO:
+- Cálculo de horas reales utilizadas
+- Detección de retrasos (+ 1 hora de gracia)
+- Marcado automático como "overdue"
+- Registro de quién hizo cada registro
+
+📈 ESTADOS DE SEGUIMIENTO:
+- PENDING: Aprobado, esperando salida
+- OUT: Empleado ha salido, esperando regreso  
+- RETURNED: Empleado ha regresado
+- OVERDUE: Retraso en el regreso
+
+================================================================================
+                              TECNOLOGÍA REQUERIDA
+================================================================================
+
+🖥️ HARDWARE:
+- Lector de códigos de barras USB
+- PC/laptop para jefe de RRHH
+- DNI peruano con código de barras
+
+💻 SOFTWARE:
+- Sistema actual Laravel (ya implementado)
+- Lector conectado como input de teclado
+- JavaScript para captura de escaneos
+
+================================================================================
+                                BENEFICIOS
+================================================================================
+
+✅ CONTROL REAL:
+- Seguimiento físico vs. planificado
+- Datos precisos de uso de permisos
+- Eliminación de aprobaciones teóricas
+
+✅ AUTOMATIZACIÓN:
+- Sin intervención manual para cálculos
+- Registro automático con timestamp
+- Alertas de retrasos automáticas
+
+✅ TRANSPARENCIA:
+- Historial completo de movimientos
+- Responsable de cada registro
+- Reportes con datos reales
+
+✅ CUMPLIMIENTO:
+- Control efectivo de políticas
+- Detección de patrones irregulares
+- Mejor gestión de RRHH
+
+================================================================================
+                                IMPLEMENTACIÓN
+================================================================================
+
+✅ COMPLETADO:
+- Refactorización completa del backend
+- Limpieza de campos redundantes
+- Nuevo sistema de tracking
+- Todas las vistas actualizadas
+- Migraciones de base de datos
+- API endpoints para escaneo
+
+🚧 PENDIENTE:
+- Interfaz web para dashboard RRHH
+- Configuración del lector de códigos
+- Rutas web para tracking
+- Pruebas de integración completas
+- Capacitación del personal RRHH
+
+================================================================================
+                                    NOTAS
+================================================================================
+
+📝 COMPATIBILIDAD:
+- Mantiene el flujo de aprobación existente
+- No afecta permisos ya aprobados
+- Interfaz familiar para usuarios
+
+🔒 SEGURIDAD:
+- Solo jefe RRHH puede registrar movimientos
+- Validación de permisos por DNI
+- Historial inmutable de registros
+
+📊 REPORTES:
+- Estadísticas con datos reales
+- Comparación planificado vs. real
+- Análisis de patrones de uso
+
+================================================================================
+
+Fecha de implementación: 21 de Agosto, 2025
+Sistema: Papeletas Digitales - Módulo de Seguimiento Físico
+Desarrollado por: Claude (Anthropic)
+
+================================================================================

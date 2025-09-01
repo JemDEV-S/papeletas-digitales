@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Notificaciones</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold mb-6">🔧 Debug Sistema de Notificaciones</h1>
+        
+        <div class="space-y-4">
+            <div class="bg-blue-50 p-4 rounded">
+                <h3 class="font-bold text-blue-800 mb-2">Step 1: Test API Endpoints</h3>
+                <div class="space-x-2">
+                    <button onclick="testAPI('/api/notifications/test')" class="bg-blue-500 text-white px-4 py-2 rounded text-sm">Test Basic</button>
+                    <button onclick="testAPI('/api/notifications/count')" class="bg-green-500 text-white px-4 py-2 rounded text-sm">Count</button>
+                    <button onclick="testAPI('/api/notifications/check')" class="bg-purple-500 text-white px-4 py-2 rounded text-sm">Check Updates</button>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-50 p-4 rounded">
+                <h3 class="font-bold text-yellow-800 mb-2">Step 2: Test Database</h3>
+                <button onclick="checkDatabase()" class="bg-yellow-500 text-white px-4 py-2 rounded text-sm">Check DB Notifications</button>
+            </div>
+            
+            <div class="bg-green-50 p-4 rounded">
+                <h3 class="font-bold text-green-800 mb-2">Step 3: Create Test Notification</h3>
+                <button onclick="createTestNotification()" class="bg-green-500 text-white px-4 py-2 rounded text-sm">Create Test</button>
+            </div>
+        </div>
+        
+        <div class="mt-6">
+            <h3 class="font-bold mb-2">🔍 Debug Output:</h3>
+            <pre id="debug-output" class="bg-gray-900 text-green-400 p-4 rounded text-xs overflow-auto max-h-96"></pre>
+        </div>
+        
+        <div class="mt-4 text-xs text-gray-500">
+            <p>Debes estar loggeado en el sistema para que funcionen las pruebas.</p>
+            <p>Si no funciona, abre esta página en otra pestaña con el sistema activo.</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('debug-output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function testAPI(endpoint) {
+            log(`Testing endpoint: ${endpoint}`);
+            
+            fetch(endpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => {
+                log(`Response status: ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                log(`✅ SUCCESS: ${JSON.stringify(data, null, 2)}`);
+            })
+            .catch(error => {
+                log(`❌ ERROR: ${error.message}`);
+            });
+        }
+
+        function checkDatabase() {
+            log('Checking database for notifications...');
+            testAPI('/api/notifications/test');
+        }
+
+        function createTestNotification() {
+            log('Attempting to create test notification...');
+            
+            fetch('/api/notifications/test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    test: true,
+                    message: 'Test notification from debug page'
+                })
+            })
+            .then(response => {
+                log(`Create response status: ${response.status}`);
+                return response.json();
+            })
+            .then(data => {
+                log(`✅ CREATE SUCCESS: ${JSON.stringify(data, null, 2)}`);
+            })
+            .catch(error => {
+                log(`❌ CREATE ERROR: ${error.message}`);
+            });
+        }
+
+        // Auto-start basic test
+        window.onload = function() {
+            log('🚀 Debug page loaded');
+            log('Testing basic connectivity...');
+            setTimeout(() => testAPI('/api/notifications/test'), 1000);
+        };
+    </script>
+</body>
+</html>
