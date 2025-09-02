@@ -693,7 +693,7 @@
         function testSimpleAPI() {
             console.log('🔌 Testing API...');
             
-            fetch('/api/notifications/count', {
+            fetch('{{ route("api.notifications.count") }}', {
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json'
@@ -703,7 +703,6 @@
             .then(data => {
                 console.log('✅ API working:', data);
                 
-                // Actualizar badge si existe
                 const badge = document.getElementById('notification-count');
                 if (badge) {
                     badge.textContent = data.count;
@@ -711,7 +710,6 @@
                     console.log('✅ Updated badge with count:', data.count);
                 }
                 
-                // También actualizar badge del sidebar
                 updateNotificationBadge(data.count);
             })
             .catch(error => {
