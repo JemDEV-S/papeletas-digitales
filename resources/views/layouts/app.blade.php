@@ -591,14 +591,14 @@
             
             // Test endpoints
             Promise.all([
-                fetch('/api/notifications/test', {
+                fetch('{{ route("api.notifications.test") }}', {
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
                     }
                 }).then(r => r.json()),
                 
-                fetch('/api/notifications/count', {
+                fetch('{{ route("api.notifications.count") }}', {
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                         'Accept': 'application/json'
@@ -622,7 +622,7 @@
                 alert('Error: ' + error.message);
             });
         };
-        
+                
         // Función manual para forzar test de notificaciones
         window.forceNotificationTest = function() {
             console.log('🔧 Forcing notification test...');
@@ -736,7 +736,7 @@
         // Verificar notificaciones nuevas
         let lastNotificationCheck = Date.now() - (5 * 60 * 1000); // 5 minutos atrás
         function checkForNewNotifications() {
-            fetch('/api/notifications/check?last_check=' + Math.floor(lastNotificationCheck / 1000), {
+            fetch('{{ route("api.notifications.check") }}?last_check=' + Math.floor(lastNotificationCheck / 1000), {
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json'
@@ -826,7 +826,7 @@
 
         // Función para marcar todas las notificaciones como leídas
         function markAllNotificationsAsRead() {
-            fetch('/api/notifications/mark-all-read', {
+            fetch('{{ route("api.notifications.mark-all-read") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -868,7 +868,7 @@
             empty.style.display = 'none';
             container.innerHTML = '';
             
-            fetch('/api/notifications/all?per_page=10', {
+            fetch('{{ route("api.notifications.all") }}?per_page=10', {
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'Accept': 'application/json'
@@ -939,7 +939,7 @@
         // Función para manejar click en notificación
         function handleNotificationClick(notificationId, actionUrl) {
             // Marcar como leída
-            fetch('/api/notifications/read', {
+            fetch('{{ route("api.notifications.read") }}', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -1054,7 +1054,7 @@
             // Actualizar sección "Mis Solicitudes"
             const myRequestsSection = document.getElementById('my-requests-section');
             if (myRequestsSection) {
-                fetch('/dashboard/my-requests', {
+                fetch('{{ route("dashboard.my-requests") }}', {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'text/html',
@@ -1072,7 +1072,7 @@
             // Actualizar sección "Solicitudes del Equipo" si existe
             const teamRequestsSection = document.getElementById('team-requests-section');
             if (teamRequestsSection) {
-                fetch('/dashboard/team-requests', {
+                fetch('{{ route("dashboard.team-requests") }}', {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'text/html',
@@ -1090,7 +1090,7 @@
 
         // Función para actualizar estadísticas del dashboard
         function updateDashboardStats() {
-            fetch('/dashboard/stats', {
+            fetch('{{ route("dashboard.stats") }}', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
