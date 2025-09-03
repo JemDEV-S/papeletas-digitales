@@ -1,12 +1,16 @@
 <x-app-layout>
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <x-slot name="header">
+                    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                        {{ __('Mis Solicitudes') }}
+                    </h2>
+                </x-slot>
             <!-- Header -->
             <div class="mb-8">
                 <div class="sm:flex sm:items-center sm:justify-between">
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Mis Solicitudes</h1>
-                        <p class="mt-1 text-sm text-gray-600">Gestione sus solicitudes de permisos</p>
+                        <p class="mt-1 text-base text-gray-600">Gestione sus solicitudes de permisos</p>
                     </div>
                     <div class="mt-4 sm:mt-0">
                         <a href="{{ route('permissions.create') }}" 
