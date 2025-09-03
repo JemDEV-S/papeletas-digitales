@@ -505,8 +505,9 @@ class PermissionRequest extends Model
             ];
         }
 
-        // Jefe inmediato puede firmar si la solicitud está pendiente y tiene firma del empleado
+        // Jefe inmediato puede firmar si es el supervisor directo del solicitante
         if ($user->hasRole('jefe_inmediato') && 
+            $this->user->immediate_supervisor_id === $user->id &&
             $this->status === self::STATUS_PENDING_IMMEDIATE_BOSS && 
             $this->hasEmployeeFirmaPeruSignature() && 
             !$this->hasLevel1FirmaPeruSignature()) {
