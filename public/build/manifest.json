@@ -1,0 +1,25 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-sjS-p8Hq.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-CoVvZ5cG.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "resources/js/firma-peru.js"
+    ]
+  },
+  "resources/js/firma-peru.js": {
+    "file": "assets/firma-peru-CBuCctry.js",
+    "name": "firma-peru",
+    "src": "resources/js/firma-peru.js",
+    "isEntry": true
+  }
+}
