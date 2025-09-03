@@ -43,10 +43,27 @@
                     </div>
                     <div class="w-full sm:w-auto">
                         <div class="bg-white bg-opacity-10 rounded-lg p-3 sm:p-4 text-center sm:text-right backdrop-blur-sm">
-                            <p class="text-xs sm:text-sm text-blue-100">ID Empleado</p>
-                            <p class="text-lg sm:text-xl font-bold">{{ $user->employee_id ?? 'N/A' }}</p>
+                            <p class="text-xs sm:text-sm text-blue-100">Estado</p>
+                            @if($user->is_active)
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-500 bg-opacity-20 text-green-300">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Activo
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-500 bg-opacity-20 text-red-300">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                    Inactivo
+                                </span>
+                            @endif
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
