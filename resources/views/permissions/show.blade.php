@@ -836,6 +836,14 @@
     @push('scripts')
     @vite('resources/js/firma-peru.js')
     <script>
+        window.firmaPeruRoutes = {
+            initiateEmployee: "{{ route('api.firma-peru.initiate-employee', ['permission' => '{permission}']) }}",
+            initiateLevel1: "{{ route('api.firma-peru.initiate-level1', ['permission' => '{permission}']) }}",
+            initiateLevel2: "{{ route('api.firma-peru.initiate-level2', ['permission' => '{permission}']) }}",
+            signatureStatus: "{{ route('api.firma-peru.signature-status', ['permission' => '{permission}']) }}",
+            verifySignatures: "{{ route('api.firma-peru.verify-signatures', ['permission' => '{permission}']) }}",
+            param: "{{ route('api.firma-peru.parameters') }}"
+        };
         // Variables globales para el visualizador PDF
         let currentZoom = 100;
         const pdfUrl = "{{ route('permissions.pdf', $permission) }}";

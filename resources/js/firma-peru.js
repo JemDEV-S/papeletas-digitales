@@ -11,9 +11,29 @@ class FirmaPeruIntegration {
         this.currentStage = null;
         this.isProcessing = false;
         this.scriptLoaded = false; // Inicializar explícitamente
+
+        this.routes = window.firmaPeruRoutes || {};
         
         console.log('🚀 Inicializando FirmaPeruIntegration...');
         this.init();
+    }
+    /**
+ * Obtener URL de ruta con parámetros
+ */
+    route(routeName, params = {}) {
+        let url = this.routes[routeName];
+        
+        if (!url) {
+            console.error(`❌ Ruta '${routeName}' no encontrada`);
+            return null;
+        }
+
+        // Reemplazar parámetros en la URL
+        Object.keys(params).forEach(key => {
+            url = url.replace(`{${key}}`, params[key]);
+        });
+
+        return url;
     }
 
     /**
@@ -223,7 +243,11 @@ class FirmaPeruIntegration {
         try {
             this.showLoading('Iniciando proceso de firma de empleado...');
 
-            const response = await fetch(`/api/firma-peru/initiate-employee/${permissionId}`, {
+            const url = this.route('initiateEmployee', { permission: permissionId });
+            if (!url) {
+                throw new Error('URL de ruta no encontrada para iniciar firma de empleado');
+            }
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -263,7 +287,11 @@ class FirmaPeruIntegration {
         try {
             this.showLoading('Iniciando proceso de aprobación y firma de jefe inmediato...');
 
-            const response = await fetch(`/api/firma-peru/initiate-level1/${permissionId}`, {
+            const url = this.route('initiateLevel1', { permission: permissionId });
+            if (!url) {
+                throw new Error('URL de ruta no encontrada para iniciar firma de jefe inmediato');
+            }
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -303,7 +331,11 @@ class FirmaPeruIntegration {
         try {
             this.showLoading('Iniciando proceso de aprobación final y firma de RRHH...');
 
-            const response = await fetch(`/api/firma-peru/initiate-level2/${permissionId}`, {
+            const url = this.route('initiateLevel2', { permission: permissionId });
+            if (!url) {
+                throw new Error('URL de ruta no encontrada para iniciar firma de RRHH');
+            }
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -378,14 +410,17 @@ class FirmaPeruIntegration {
             try {
                 console.log('sendParam llamado con param_token:', self.currentParamToken);
                 
-                const fullUrl = window.location.origin + '/api/firma-peru/param';
-                console.log('URL completa para sendParam:', fullUrl);
+                const paramUrl = self.route('param');
+                if (!paramUrl) {
+                    throw new Error('URL de parámetros no encontrada');
+                }
                 
-                // FIRMA PERÚ requiere application/x-www-form-urlencoded según documentación
+                console.log('URL para sendParam:', paramUrl);
+                
                 const formData = new FormData();
                 formData.append('param_token', self.currentParamToken);
                 
-                const response = await fetch(fullUrl, {
+                const response = await fetch(paramUrl, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -529,7 +564,11 @@ class FirmaPeruIntegration {
         try {
             this.showLoading('Verificando integridad de firmas...');
 
-            const response = await fetch(`/api/firma-peru/verify-signatures/${permissionId}`, {
+            const url = this.route('verifySignatures', { permission: permissionId });
+            if (!url) {
+                throw new Error('URL de ruta no encontrada para verificar firmas');
+            }
+            const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -649,7 +688,14 @@ class FirmaPeruIntegration {
         if (!this.currentPermissionId) return;
 
         try {
-            const response = await fetch(`/api/firma-peru/signature-status/${this.currentPermissionId}`);
+            // CAMBIO: Usar route() en lugar de URL hardcodeada
+            const url = this.route('signatureStatus', { permission: this.currentPermissionId });
+            if (!url) {
+                console.error('URL de estado de firma no encontrada');
+                return;
+            }
+
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.success) {
@@ -671,7 +717,14 @@ class FirmaPeruIntegration {
             if (!permissionId) continue;
 
             try {
-                const response = await fetch(`/api/firma-peru/signature-status/${permissionId}`);
+                // CAMBIO: Usar route() en lugar de URL hardcodeada
+                const url = this.route('signatureStatus', { permission: permissionId });
+                if (!url) {
+                    console.error(`URL de estado de firma no encontrada para permiso ${permissionId}`);
+                    continue; // CAMBIO: usar continue en lugar de return para procesar otros permisos
+                }
+
+                const response = await fetch(url);
                 const data = await response.json();
 
                 if (data.success) {
