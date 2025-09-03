@@ -449,7 +449,7 @@ class FirmaPeruIntegration {
         };
 
         // Iniciar el proceso de firma
-        const fullParamUrl = window.location.origin + '/api/firma-peru/param';
+        const fullParamUrl = self.route('param');
         const param = {
             'param_url': fullParamUrl,
             'param_token': self.currentParamToken,
