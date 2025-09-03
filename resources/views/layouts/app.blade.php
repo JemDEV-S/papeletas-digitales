@@ -198,19 +198,6 @@
                             <i class="fas fa-chart-bar mr-3 text-gray-400 group-hover:text-white"></i>
                             Reportes RRHH
                         </a>
-                        
-                        <!-- Firmas Digitales -->
-                        <div class="mt-2">
-                            <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Firma Digital</p>
-                            <a href="{{ route('reports.digital-signatures') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
-                                <i class="fas fa-signature mr-3 text-gray-400 group-hover:text-white"></i>
-                                Reporte de Firmas
-                            </a>
-                            <a href="{{ route('reports.signature-integrity') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
-                                <i class="fas fa-shield-alt mr-3 text-gray-400 group-hover:text-white"></i>
-                                Integridad
-                            </a>
-                        </div>
                     @endif
                     
                     @if(auth()->user()->hasRole('admin'))

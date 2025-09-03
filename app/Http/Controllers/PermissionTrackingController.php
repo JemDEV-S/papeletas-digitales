@@ -14,11 +14,39 @@ class PermissionTrackingController extends Controller
 {
     public function index()
     {
-        $trackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+        $user = Auth::user();
+        
+        // Obtener permisos propios del usuario
+        $ownTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+            ->whereHas('permissionRequest', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get();
 
-        return view('tracking.index', compact('trackings'));
+        // Obtener permisos del equipo según el rol
+        $teamTrackings = collect();
+        
+        if ($user->hasRole('jefe_inmediato')) {
+            // Si es jefe inmediato, ver los permisos de sus subordinados
+            $subordinateIds = $user->subordinates()->pluck('id');
+            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+                ->whereHas('permissionRequest', function($q) use ($subordinateIds) {
+                    $q->whereIn('user_id', $subordinateIds);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } elseif ($user->hasRole(['jefe_rrhh', 'admin'])) {
+            // Si es jefe de RRHH o admin, ver todos los permisos excepto los propios
+            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+                ->whereHas('permissionRequest', function($q) use ($user) {
+                    $q->where('user_id', '!=', $user->id);
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+
+        return view('tracking.index', compact('ownTrackings', 'teamTrackings'));
     }
 
     public function show(PermissionTracking $tracking)
@@ -175,6 +203,12 @@ class PermissionTrackingController extends Controller
         $tracking = PermissionTracking::findOrFail($request->tracking_id);
         
         if ($tracking->registerReturn(Auth::user(), $request->notes)) {
+
+            // Update permission request status to completed
+            $tracking->permissionRequest->update([
+                'status' => PermissionRequest::STATUS_APPROVED
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Regreso registrado correctamente',

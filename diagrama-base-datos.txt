@@ -1,0 +1,310 @@
+===========================================
+DIAGRAMA DE BASE DE DATOS - SISTEMA DE PAPELETAS DIGITALES
+===========================================
+
+DIAGRAMA MERMAID ERD:
+
+```mermaid
+erDiagram
+    %% Entidades principales
+    users {
+        bigint id PK
+        string dni UK "Documento de identidad único"
+        string first_name "Nombre"
+        string last_name "Apellido"
+        string name "Nombre completo (auto-generado)"
+        string email UK "Correo electrónico"
+        timestamp email_verified_at "Fecha verificación email"
+        string password "Contraseña encriptada"
+        bigint department_id FK "ID del departamento"
+        bigint role_id FK "ID del rol"
+        bigint immediate_supervisor_id FK "ID del supervisor inmediato"
+        boolean is_active "Usuario activo"
+        string remember_token "Token de recordar sesión"
+        string two_factor_secret "Secreto 2FA"
+        timestamp two_factor_expires_at "Expiración 2FA"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    roles {
+        bigint id PK
+        string name UK "Nombre del rol (empleado, jefe_inmediato, jefe_rrhh, admin)"
+        string description "Descripción del rol"
+        json permissions "Permisos en formato JSON"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    departments {
+        bigint id PK
+        string name "Nombre del departamento"
+        string code UK "Código único del departamento"
+        string description "Descripción"
+        bigint parent_department_id FK "ID departamento padre (auto-referencia)"
+        bigint manager_id FK "ID del gerente del departamento"
+        boolean is_active "Departamento activo"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    permission_types {
+        bigint id PK
+        string name "Nombre del tipo de permiso"
+        string code UK "Código único (enfermedad, gravidez, etc.)"
+        string description "Descripción detallada"
+        int max_hours_per_day "Máximo horas por día"
+        int max_hours_per_month "Máximo horas por mes"
+        int max_times_per_month "Máximo veces por mes"
+        boolean requires_document "Requiere documento"
+        boolean with_pay "Con goce de sueldo"
+        json validation_rules "Reglas de validación JSON"
+        boolean is_active "Tipo activo"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    permission_requests {
+        bigint id PK
+        string request_number UK "Número de solicitud (PAP-YYYY-XXXXXX)"
+        bigint user_id FK "ID del solicitante"
+        bigint permission_type_id FK "ID del tipo de permiso"
+        text reason "Motivo de la solicitud"
+        enum status "draft|pending_immediate_boss|pending_hr|approved|rejected|cancelled|in_progress"
+        json metadata "Metadatos adicionales JSON"
+        timestamp submitted_at "Fecha de envío"
+        int current_approval_level "Nivel actual de aprobación (1-2)"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    approvals {
+        bigint id PK
+        bigint permission_request_id FK "ID de la solicitud"
+        bigint approver_id FK "ID del aprobador"
+        int approval_level "Nivel de aprobación (1=jefe, 2=rrhh)"
+        enum status "pending|approved|rejected"
+        text comments "Comentarios de aprobación"
+        timestamp approved_at "Fecha de aprobación"
+        string digital_signature_hash "Hash de firma digital"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    documents {
+        bigint id PK
+        bigint permission_request_id FK "ID de la solicitud"
+        string original_name "Nombre original del archivo"
+        string stored_name "Nombre almacenado"
+        string file_path "Ruta del archivo"
+        string mime_type "Tipo MIME"
+        bigint file_size "Tamaño en bytes"
+        enum document_type "certificado_medico|citacion|acreditacion|otros"
+        string file_hash "Hash SHA256 del archivo"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    digital_signatures {
+        bigint id PK
+        bigint permission_request_id FK "ID de la solicitud"
+        bigint user_id FK "ID del usuario que firmó"
+        enum signature_type "employee|level1_supervisor|level2_hr|onpe_employee_signature|onpe_supervisor_signature|onpe_hr_signature|internal_approval"
+        string certificate_serial "Serial del certificado"
+        string signature_hash "Hash de la firma"
+        string signature_algorithm "Algoritmo de firma"
+        string signature_timestamp "Timestamp de firma"
+        text signer_dn "Distinguished Name del firmante"
+        timestamp signed_at "Fecha de firma"
+        json certificate_data "Datos del certificado JSON"
+        json signature_metadata "Metadatos de firma JSON"
+        string document_path "Ruta del documento firmado"
+        boolean is_valid "Firma válida"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        bigint id PK
+        string uuid UK "UUID único de notificación"
+        bigint user_id FK "ID del usuario destinatario"
+        bigint sender_id FK "ID del usuario remitente"
+        enum type "permission_submitted|permission_approved|permission_rejected|permission_cancelled|permission_expired|system_maintenance|bulk_approval|deadline_reminder"
+        enum category "permission|system|admin|reminder"
+        enum priority "low|normal|high|urgent"
+        string title "Título de la notificación"
+        text message "Mensaje completo"
+        json data "Datos adicionales JSON"
+        bigint permission_request_id FK "ID solicitud relacionada"
+        timestamp read_at "Fecha de lectura"
+        timestamp sent_at "Fecha de envío"
+        timestamp delivered_at "Fecha de entrega"
+        boolean is_broadcast "Es difusión"
+        boolean is_email_sent "Email enviado"
+        timestamp expires_at "Fecha de expiración"
+        string channel "Canal de notificación"
+        string reference_type "Tipo de referencia polimórfica"
+        bigint reference_id "ID de referencia polimórfica"
+        json metadata "Metadatos JSON"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    permission_trackings {
+        bigint id PK
+        bigint permission_request_id FK "ID de la solicitud"
+        string employee_dni "DNI del empleado"
+        timestamp departure_datetime "Fecha/hora de salida"
+        timestamp return_datetime "Fecha/hora de regreso"
+        decimal actual_hours_used "Horas realmente utilizadas"
+        enum tracking_status "pending|out|returned|overdue"
+        bigint registered_by_user_id FK "ID usuario que registró"
+        text notes "Notas adicionales"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    agent_tokens {
+        bigint id PK
+        int agent_id "ID del agente ZKTeco"
+        string name "Nombre descriptivo del token"
+        string token UK "Token único (zka_xxxxx)"
+        json abilities "Capacidades del token JSON"
+        timestamp last_used_at "Última vez usado"
+        timestamp expires_at "Fecha de expiración"
+        boolean is_active "Token activo"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% Relaciones principales
+    users ||--o{ permission_requests : "solicita"
+    users ||--o{ approvals : "aprueba"
+    users ||--o{ notifications : "recibe"
+    users ||--o{ notifications : "envía"
+    users ||--o{ digital_signatures : "firma"
+    users ||--o{ permission_trackings : "registra"
+    users ||--o{ users : "supervisa"
+
+    roles ||--o{ users : "tiene"
+    
+    departments ||--o{ users : "pertenece"
+    departments ||--o{ departments : "padre_de"
+    
+    permission_types ||--o{ permission_requests : "tipo_de"
+    
+    permission_requests ||--o{ approvals : "requiere"
+    permission_requests ||--o{ documents : "adjunta"
+    permission_requests ||--o{ digital_signatures : "se_firma"
+    permission_requests ||--o{ notifications : "genera"
+    permission_requests ||--|| permission_trackings : "se_rastrea"
+    
+    %% Relaciones específicas de FK
+    users ||--o{ departments : manages
+    users ||--o{ permission_trackings : registered_by
+
+    %% Auto-referencias
+    departments ||--o{ departments : "departamento_padre"
+    users ||--o{ users : "supervisor_inmediato"
+
+    %% Relaciones polimórficas
+    permission_requests ||--o{ notifications : "reference"
+```
+
+===========================================
+RESUMEN DE ENTIDADES Y FUNCIONALIDADES
+===========================================
+
+ENTIDADES PRINCIPALES:
+
+1. **users** - Gestión de usuarios con jerarquía de supervisión
+   - Campos clave: dni (único), email, department_id, role_id, immediate_supervisor_id
+   - Auto-referencia para supervisión
+   - Integración con autenticación Laravel
+
+2. **roles** - Sistema de roles con permisos configurables
+   - Roles principales: empleado, jefe_inmediato, jefe_rrhh, admin
+   - Permisos en formato JSON para flexibilidad
+
+3. **departments** - Departamentos con estructura jerárquica
+   - Auto-referencia para departamentos padre
+   - Relación con manager (usuario gerente)
+
+4. **permission_types** - Tipos de permisos configurables
+   - Códigos específicos: enfermedad, gravidez, capacitacion, etc.
+   - Límites configurables por día/mes
+   - Reglas de validación en JSON
+
+5. **permission_requests** - Solicitudes de permisos (entidad central)
+   - Número único de solicitud (PAP-YYYY-XXXXXX)
+   - Estados: draft, pending_immediate_boss, pending_hr, approved, rejected, cancelled
+   - Sistema de aprobación multinivel
+
+6. **approvals** - Sistema de aprobaciones multinivel
+   - Nivel 1: Jefe inmediato
+   - Nivel 2: RRHH
+   - Estados: pending, approved, rejected
+
+7. **documents** - Gestión de documentos adjuntos
+   - Soporte para múltiples tipos de archivo
+   - Verificación de integridad con hash SHA256
+   - Tipos específicos: certificado_medico, citacion, acreditacion, etc.
+
+8. **digital_signatures** - Firmas digitales avanzadas
+   - Soporte para FIRMA PERÚ (nuevos tipos: employee, level1_supervisor, level2_hr)
+   - Compatibilidad con ONPE (tipos legacy)
+   - Verificación de integridad y validez
+
+9. **notifications** - Sistema de notificaciones completo
+   - Múltiples tipos: permission_submitted, permission_approved, etc.
+   - Categorías: permission, system, admin, reminder
+   - Prioridades: low, normal, high, urgent
+   - Soporte para expiración y difusión
+
+10. **permission_trackings** - Seguimiento en tiempo real
+    - Estados: pending, out, returned, overdue
+    - Control de horas reales utilizadas
+    - Integración con dispositivos de acceso
+
+11. **agent_tokens** - Tokens para agentes ZKTeco
+    - Autenticación para dispositivos biométricos
+    - Capacidades configurables
+    - Control de expiración y actividad
+
+===========================================
+CARACTERÍSTICAS DESTACADAS DEL SISTEMA
+===========================================
+
+FLUJO DE APROBACIÓN:
+1. Empleado crea solicitud (draft)
+2. Empleado firma digitalmente (FIRMA PERÚ)
+3. Solicitud se envía a jefe inmediato (pending_immediate_boss)
+4. Jefe inmediato aprueba y firma (level1_supervisor)
+5. Solicitud pasa a RRHH (pending_hr)
+6. RRHH aprueba y firma finalmente (level2_hr)
+7. Solicitud aprobada, se crea tracking record
+
+SEGURIDAD Y TRAZABILIDAD:
+- Firmas digitales con certificados X.509
+- Hash de documentos para verificar integridad
+- Logs de actividad y cambios de estado
+- Tokens seguros para dispositivos externos
+- Sistema de notificaciones en tiempo real
+
+INTEGRACIÓN EXTERNA:
+- Dispositivos ZKTeco para control de acceso
+- Servicio FIRMA PERÚ para firmas digitales
+- Sistema de notificaciones por email
+- API REST para agentes externos
+
+REPORTERÍA Y ANÁLISIS:
+- Seguimiento en tiempo real de permisos
+- Estadísticas de aprobación por supervisor
+- Análisis de cumplimiento y ausentismo
+- Métricas de performance del sistema
+
+===========================================
+GENERADO: 2025-09-03
+VERSIÓN: Laravel 11 con PHP 8+
+MOTOR BD: MySQL/PostgreSQL
+===========================================
