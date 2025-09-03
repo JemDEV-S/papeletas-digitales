@@ -26,6 +26,7 @@ class ServerSyncService
         $this->httpClient = new Client([
             'base_uri' => $this->serverUrl,
             'timeout' => 30,
+            'verify' => false, // Desactivar verificación SSL (ajustar según necesidad)
             'headers' => [
                 'Authorization' => 'Bearer ' . $this->apiToken,
                 'Content-Type' => 'application/json',
@@ -37,7 +38,7 @@ class ServerSyncService
     public function syncEmployeesFromServer(): bool
     {
         try {
-            $response = $this->httpClient->get('/api/agent/employees');
+            $response = $this->httpClient->get('api/agent/employees');
             
             if ($response->getStatusCode() !== 200) {
                 throw new \Exception('Error en respuesta del servidor: ' . $response->getStatusCode());
@@ -145,7 +146,7 @@ class ServerSyncService
                 'zkteco_event_id' => $event['zkteco_event_id'],
             ];
 
-            $response = $this->httpClient->post('/api/agent/access-events', [
+            $response = $this->httpClient->post('api/agent/access-events', [
                 'json' => $payload
             ]);
 
@@ -194,7 +195,7 @@ class ServerSyncService
                 'last_sync' => date('Y-m-d H:i:s'),
             ];
 
-            $response = $this->httpClient->post('/api/agent/register', [
+            $response = $this->httpClient->post('api/agent/register', [
                 'json' => $payload
             ]);
 
@@ -222,7 +223,7 @@ class ServerSyncService
                 'stats' => $this->getAgentStats(),
             ];
 
-            $response = $this->httpClient->post('/api/agent/heartbeat', [
+            $response = $this->httpClient->post('api/agent/heartbeat', [
                 'json' => $payload
             ]);
 
@@ -264,7 +265,7 @@ class ServerSyncService
     public function checkServerConnection(): bool
     {
         try {
-            $response = $this->httpClient->get('/api/agent/ping');
+            $response = $this->httpClient->get('api/agent/ping');
             return $response->getStatusCode() === 200;
         } catch (RequestException $e) {
             $this->logger->warning('Servidor no disponible: ' . $e->getMessage());
@@ -275,7 +276,7 @@ class ServerSyncService
     public function getServerStatus(): array
     {
         try {
-            $response = $this->httpClient->get('/api/agent/status');
+            $response = $this->httpClient->get('api/agent/status');
             
             if ($response->getStatusCode() === 200) {
                 return json_decode($response->getBody(), true);
@@ -293,7 +294,7 @@ class ServerSyncService
     public function getPermissionTrackingsForDni(string $dni): array
     {
         try {
-            $response = $this->httpClient->get("/api/agent/permission-trackings/{$dni}");
+            $response = $this->httpClient->get("api/agent/permission-trackings/{$dni}");
             
             if ($response->getStatusCode() === 200) {
                 $data = json_decode($response->getBody(), true);
