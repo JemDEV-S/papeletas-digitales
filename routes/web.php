@@ -9,6 +9,8 @@ use App\Http\Controllers\SignatureController; // Nuevo controlador para firma di
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\AgentManagementController;
 use App\Http\Controllers\HRReportsController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -240,6 +242,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
         
         // Estadísticas de uso
         Route::get('/signatures/statistics', [SignatureController::class, 'signaturesStatistics'])->name('signatures.statistics');
+    });
+
+    // === RUTAS DE ADMINISTRACIÓN DE USUARIOS Y DEPARTAMENTOS ===
+    Route::middleware([App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
+        
+        // Administración de Usuarios
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+        Route::patch('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
+        Route::patch('/users/{user}/reset-password', [AdminUserController::class, 'resetPassword'])->name('users.reset-password');
+        
+        // Vista de jerarquía de usuarios
+        Route::get('/users-hierarchy', [AdminUserController::class, 'hierarchy'])->name('users.hierarchy');
+        Route::get('/users-hierarchy/data', [AdminUserController::class, 'getHierarchyData'])->name('users.hierarchy.data');
+        
+        // Administración de Departamentos
+        Route::get('/departments', [AdminDepartmentController::class, 'index'])->name('departments.index');
+        Route::get('/departments/create', [AdminDepartmentController::class, 'create'])->name('departments.create');
+        Route::post('/departments', [AdminDepartmentController::class, 'store'])->name('departments.store');
+        Route::get('/departments/{department}', [AdminDepartmentController::class, 'show'])->name('departments.show');
+        Route::get('/departments/{department}/edit', [AdminDepartmentController::class, 'edit'])->name('departments.edit');
+        Route::put('/departments/{department}', [AdminDepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [AdminDepartmentController::class, 'destroy'])->name('departments.destroy');
+        Route::patch('/departments/{department}/activate', [AdminDepartmentController::class, 'activate'])->name('departments.activate');
+        
+        // Vista de jerarquía de departamentos
+        Route::get('/departments-hierarchy', [AdminDepartmentController::class, 'hierarchy'])->name('departments.hierarchy');
+        Route::get('/departments-hierarchy/data', [AdminDepartmentController::class, 'getHierarchyData'])->name('departments.hierarchy.data');
+        Route::get('/departments/{department}/users', [AdminDepartmentController::class, 'getUsersByDepartment'])->name('departments.users');
     });
 });
 

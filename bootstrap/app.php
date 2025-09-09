@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'agent.auth' => \App\Http\Middleware\AuthenticateAgent::class,
+            'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
         
         // Usar nuestro middleware CSRF personalizado para excluir rutas de FIRMA PERÚ

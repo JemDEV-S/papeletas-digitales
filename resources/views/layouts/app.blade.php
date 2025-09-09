@@ -200,18 +200,40 @@
                         </a>
                     @endif
                     
-                    @if(auth()->user()->hasRole('admin'))
+                    @if(auth()->user()->hasRole(['admin', 'jefe_rrhh']))
                         <!-- Administración -->
                         <div class="mt-4">
                             <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administración</p>
-                            <a href="{{ route('admin.signatures.index') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
-                                <i class="fas fa-cogs mr-3 text-gray-400 group-hover:text-white"></i>
-                                Gestión de Firmas
+                            
+                            <!-- Gestión de Usuarios -->
+                            <a href="{{ route('admin.users.index') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.users.*') ? 'bg-gray-700 text-white' : '' }}">
+                                <i class="fas fa-users mr-3 text-gray-400 group-hover:text-white"></i>
+                                Usuarios
                             </a>
-                            <a href="{{ route('admin.signatures.statistics') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
-                                <i class="fas fa-analytics mr-3 text-gray-400 group-hover:text-white"></i>
-                                Estadísticas
+                            
+                            <!-- Gestión de Departamentos -->
+                            <a href="{{ route('admin.departments.index') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.departments.*') ? 'bg-gray-700 text-white' : '' }}">
+                                <i class="fas fa-building mr-3 text-gray-400 group-hover:text-white"></i>
+                                Departamentos
                             </a>
+                            
+                            <!-- Jerarquía Organizacional -->
+                            <a href="{{ route('admin.users.hierarchy') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.users.hierarchy') ? 'bg-gray-700 text-white' : '' }}">
+                                <i class="fas fa-sitemap mr-3 text-gray-400 group-hover:text-white"></i>
+                                Jerarquía
+                            </a>
+                            
+                            @if(auth()->user()->hasRole('admin'))
+                                <!-- Solo para Admin -->
+                                <a href="{{ route('admin.signatures.index') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
+                                    <i class="fas fa-cogs mr-3 text-gray-400 group-hover:text-white"></i>
+                                    Gestión de Firmas
+                                </a>
+                                <a href="{{ route('admin.signatures.statistics') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group">
+                                    <i class="fas fa-analytics mr-3 text-gray-400 group-hover:text-white"></i>
+                                    Estadísticas
+                                </a>
+                            @endif
                         </div>
                     @endif
                 </div>
