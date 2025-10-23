@@ -35,7 +35,7 @@ class UserSeeder extends Seeder
         $users = [
             // Administrador del Sistema
             [
-                'dni' => '10000001',
+                'dni' => '15067832',
                 'first_name' => 'Admin',
                 'last_name' => 'Sistema',
                 'email' => 'admin@munisanjeronimocusco.gob.pe',
