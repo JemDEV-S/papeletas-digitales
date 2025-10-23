@@ -134,7 +134,7 @@
                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Permisos Principales</h3>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 @foreach($permissionTypes as $type)
-                                    @if(in_array(strtolower($type->name), ['por comisión de servicios', 'comisión de servicios', 'comision de servicios', 'por enfermedad', 'enfermedad', 'por asuntos particulares', 'asuntos particulares']))
+                                    @if(in_array(strtolower($type->name), ['por comisión de servicios', 'comisión de servicios', 'comision de servicios', 'por enfermedad', 'enfermedad', 'por asuntos particulares', 'asuntos particulares', 'otros']))
                                         <label class="relative cursor-pointer transform transition-all duration-300 hover:scale-105">
                                             <input type="radio" name="permission_type_id" value="{{ $type->id }}" 
                                                    class="sr-only permission-radio" 

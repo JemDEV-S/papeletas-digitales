@@ -45,6 +45,7 @@ class PermissionType extends Model
     const LACTANCIA = 'lactancia';
     const COMISION = 'comision';
     const ASUNTOS_PARTICULARES = 'asuntos_particulares';
+    const OTROS = 'otros';
 
     /**
      * Get icon emoji for the permission type
