@@ -43,7 +43,8 @@ class ReportExport implements FromArray, WithHeadings, WithStyles, WithTitle
             'requests_by_department' => 'Solicitudes por Departamento',
             'absenteeism' => 'Reporte de Ausentismo',
             'active_employees' => 'Empleados Activos',
-            'supervisor_performance' => 'Rendimiento Supervisores'
+            'supervisor_performance' => 'Rendimiento Supervisores',
+            'complete_report' => 'Reporte Completo con Seguimiento'
         ];
 
         return $titles[$this->reportType] ?? 'Reporte';

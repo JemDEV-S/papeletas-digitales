@@ -448,15 +448,97 @@ class HRReportsController extends Controller
         return view('hr.reports.compliance', compact('data', 'dateFrom', 'dateTo'));
     }
 
+    public function completeReport(Request $request)
+    {
+        $dateFrom = $request->get('date_from', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $dateTo = $request->get('date_to', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $status = $request->get('status', 'all');
+        $department = $request->get('department', 'all');
+        $permissionType = $request->get('permission_type', 'all');
+
+        // Build query
+        $query = PermissionRequest::with([
+            'user.department',
+            'permissionType',
+            'approvals.approver',
+            'tracking',
+            'digitalSignatures' => function($q) {
+                $q->where('is_valid', true)->orderBy('signed_at', 'desc');
+            }
+        ])
+        ->whereBetween('created_at', [$dateFrom, $dateTo]);
+
+        // Apply filters
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if ($department !== 'all') {
+            $query->whereHas('user', function($q) use ($department) {
+                $q->where('department_id', $department);
+            });
+        }
+
+        if ($permissionType !== 'all') {
+            $query->where('permission_type_id', $permissionType);
+        }
+
+        $data = $query->orderBy('created_at', 'desc')->paginate(50);
+
+        // Get filter options
+        $departments = Department::orderBy('name')->get();
+        $permissionTypes = PermissionType::orderBy('name')->get();
+        $statuses = [
+            'all' => 'Todos',
+            PermissionRequest::STATUS_DRAFT => 'Borrador',
+            PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS => 'Pendiente Jefe Inmediato',
+            PermissionRequest::STATUS_PENDING_HR => 'Pendiente RRHH',
+            PermissionRequest::STATUS_APPROVED => 'Aprobado',
+            PermissionRequest::STATUS_REJECTED => 'Rechazado',
+            PermissionRequest::STATUS_CANCELLED => 'Cancelado',
+        ];
+
+        // Summary stats
+        $summary = [
+            'total' => PermissionRequest::whereBetween('created_at', [$dateFrom, $dateTo])->count(),
+            'approved' => PermissionRequest::whereBetween('created_at', [$dateFrom, $dateTo])->where('status', 'approved')->count(),
+            'pending' => PermissionRequest::whereBetween('created_at', [$dateFrom, $dateTo])->whereIn('status', ['pending_immediate_boss', 'pending_hr'])->count(),
+            'rejected' => PermissionRequest::whereBetween('created_at', [$dateFrom, $dateTo])->where('status', 'rejected')->count(),
+            'with_tracking' => PermissionTracking::whereHas('permissionRequest', function($q) use ($dateFrom, $dateTo) {
+                $q->whereBetween('created_at', [$dateFrom, $dateTo]);
+            })->count(),
+        ];
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => $data,
+                'summary' => $summary
+            ]);
+        }
+
+        return view('hr.reports.complete-report', compact(
+            'data',
+            'summary',
+            'dateFrom',
+            'dateTo',
+            'status',
+            'department',
+            'permissionType',
+            'departments',
+            'permissionTypes',
+            'statuses'
+        ));
+    }
+
     public function export(Request $request)
     {
         $reportType = $request->get('type', 'requests_by_status');
         $dateFrom = $request->get('date_from', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $dateTo = $request->get('date_to', Carbon::now()->endOfMonth()->format('Y-m-d'));
-        
+
         $data = $this->getReportData($reportType, $dateFrom, $dateTo);
         $filename = "reporte_{$reportType}_" . date('Y-m-d_H-i-s') . '.xlsx';
-        
+
         return Excel::download(new ReportExport($data, $reportType), $filename);
     }
 
@@ -561,8 +643,81 @@ class HRReportsController extends Controller
             'absenteeism' => $this->getAbsenteeismData($dateFrom, $dateTo),
             'active_employees' => $this->getActiveEmployeesData($dateFrom, $dateTo),
             'supervisor_performance' => $this->getSupervisorPerformanceData($dateFrom, $dateTo),
+            'complete_report' => $this->getCompleteReportData($dateFrom, $dateTo),
             default => []
         };
+    }
+
+    private function getCompleteReportData($dateFrom, $dateTo)
+    {
+        return PermissionRequest::with([
+            'user.department',
+            'permissionType',
+            'approvals.approver',
+            'tracking'
+        ])
+        ->whereBetween('created_at', [$dateFrom, $dateTo])
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($request) {
+            // Get approvals info
+            $level1Approval = $request->getApprovalByLevel(1);
+            $level2Approval = $request->getApprovalByLevel(2);
+
+            return [
+                'Número Solicitud' => $request->request_number,
+                'Empleado' => $request->user->full_name,
+                'DNI' => $request->user->dni,
+                'Departamento' => $request->user->department->name ?? 'N/A',
+                'Tipo de Permiso' => $request->permissionType->name,
+                'Estado Solicitud' => $request->getStatusLabel(),
+                'Fecha Creación' => $request->created_at->format('d/m/Y H:i'),
+                'Fecha Envío' => $request->submitted_at ? $request->submitted_at->format('d/m/Y H:i') : 'N/A',
+
+                // Approval Level 1
+                'Jefe Inmediato' => $level1Approval ? $level1Approval->approver->full_name : 'N/A',
+                'Estado Aprobación Nivel 1' => $level1Approval ? $level1Approval->getStatusLabel() : 'N/A',
+                'Fecha Aprobación Nivel 1' => $level1Approval && $level1Approval->approved_at ? $level1Approval->approved_at->format('d/m/Y H:i') : 'N/A',
+                'Comentarios Nivel 1' => $level1Approval ? ($level1Approval->comments ?? 'Sin comentarios') : 'N/A',
+
+                // Approval Level 2
+                'Jefe RRHH' => $level2Approval ? $level2Approval->approver->full_name : 'N/A',
+                'Estado Aprobación Nivel 2' => $level2Approval ? $level2Approval->getStatusLabel() : 'N/A',
+                'Fecha Aprobación Nivel 2' => $level2Approval && $level2Approval->approved_at ? $level2Approval->approved_at->format('d/m/Y H:i') : 'N/A',
+                'Comentarios Nivel 2' => $level2Approval ? ($level2Approval->comments ?? 'Sin comentarios') : 'N/A',
+
+                // Tracking info
+                'Tiene Seguimiento' => $request->tracking ? 'Sí' : 'No',
+                'Estado Seguimiento' => $request->tracking ? $request->tracking->getStatusLabel() : 'N/A',
+                'Fecha/Hora Salida' => $request->tracking && $request->tracking->departure_datetime ?
+                    $request->tracking->departure_datetime->format('d/m/Y H:i') : 'N/A',
+                'Fecha/Hora Regreso' => $request->tracking && $request->tracking->return_datetime ?
+                    $request->tracking->return_datetime->format('d/m/Y H:i') : 'N/A',
+                'Horas Utilizadas' => $request->tracking && $request->tracking->actual_hours_used ?
+                    $request->tracking->actual_hours_used : 'N/A',
+
+                // Time metrics
+                'Tiempo Total Aprobación (horas)' => $this->calculateApprovalTime($request),
+            ];
+        })->toArray();
+    }
+
+    private function calculateApprovalTime($request)
+    {
+        if (!$request->submitted_at) {
+            return 'N/A';
+        }
+
+        $finalApproval = $request->approvals()
+            ->where('status', 'approved')
+            ->orderBy('approval_level', 'desc')
+            ->first();
+
+        if (!$finalApproval || !$finalApproval->approved_at) {
+            return 'N/A';
+        }
+
+        return round($request->submitted_at->diffInHours($finalApproval->approved_at), 1);
     }
 
     private function getRequestsByStatusData($dateFrom, $dateTo)

@@ -191,11 +191,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // === REPORTES AVANZADOS PARA JEFE DE RRHH ===
-    Route::middleware(['role:jefe_rrhh'])->prefix('hr')->name('hr.')->group(function () {
-        
+    Route::middleware(['role:jefe_rrhh,admin'])->prefix('hr')->name('hr.')->group(function () {
+
         // Dashboard principal de reportes
         Route::get('/reports', [HRReportsController::class, 'dashboard'])->name('reports.dashboard');
-        
+
         // Reportes específicos
         Route::get('/reports/requests-by-status', [HRReportsController::class, 'requestsByStatus'])->name('reports.requests-by-status');
         Route::get('/reports/requests-by-type', [HRReportsController::class, 'requestsByType'])->name('reports.requests-by-type');
@@ -207,7 +207,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/reports/real-time-tracking', [HRReportsController::class, 'realTimeTracking'])->name('reports.real-time-tracking');
         Route::get('/reports/temporal-trends', [HRReportsController::class, 'temporalTrends'])->name('reports.temporal-trends');
         Route::get('/reports/compliance', [HRReportsController::class, 'compliance'])->name('reports.compliance');
-        
+
+        // Reporte completo con seguimiento
+        Route::get('/reports/complete-report', [HRReportsController::class, 'completeReport'])->name('reports.complete-report');
+
         // Exportación a Excel
         Route::get('/reports/export', [HRReportsController::class, 'export'])->name('reports.export');
     });
