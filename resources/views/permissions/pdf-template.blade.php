@@ -137,6 +137,7 @@
             width: 33.33%;
             padding: 0 3px;
             vertical-align: top;
+            min-height: 120px; 
         }
         
         .signature-box {

@@ -619,4 +619,59 @@ class PermissionRequest extends Model
             default => 0
         };
     }
+
+    /**
+     * Verificar si tiene PDF con tracking generado
+     */
+    public function hasTrackingPdf(): bool
+    {
+        $metadata = $this->metadata ?? [];
+
+        if (!isset($metadata['tracking_pdf_path'])) {
+            return false;
+        }
+
+        $path = storage_path('app/' . $metadata['tracking_pdf_path']);
+        $exists = file_exists($path);
+
+        \Log::debug('Verificando PDF con tracking', [
+            'permission_id' => $this->id,
+            'metadata_path' => $metadata['tracking_pdf_path'],
+            'full_path' => $path,
+            'exists' => $exists
+        ]);
+
+        return $exists;
+    }
+
+    /**
+     * Obtener ruta del PDF con tracking
+     */
+    public function getTrackingPdfPath(): ?string
+    {
+        $metadata = $this->metadata ?? [];
+
+        if (isset($metadata['tracking_pdf_path'])) {
+            $path = storage_path('app/' . $metadata['tracking_pdf_path']);
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Obtener fecha de generación del PDF con tracking
+     */
+    public function getTrackingPdfGeneratedAt(): ?\Carbon\Carbon
+    {
+        $metadata = $this->metadata ?? [];
+
+        if (isset($metadata['tracking_pdf_generated_at'])) {
+            return \Carbon\Carbon::parse($metadata['tracking_pdf_generated_at']);
+        }
+
+        return null;
+    }
 }

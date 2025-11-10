@@ -334,7 +334,7 @@ class PermissionRequestController extends Controller
     }
 
     /**
-     * Generate PDF for permission request
+     * Generate PDF for permission request (siempre muestra el original con firmas)
      */
     public function generatePdf(PermissionRequest $permission)
     {
@@ -344,20 +344,20 @@ class PermissionRequestController extends Controller
         }
 
         try {
-            // Si tiene documento firmado, mostrar el firmado en lugar del original
+            // Prioridad 1: PDF firmado (si existe) - preserva firmas digitales
             $signedDocument = $permission->getLatestSignedDocument();
             if ($signedDocument && $signedDocument->document_exists) {
                 return $this->getSignedPdf($permission, $signedDocument);
             }
 
-            // Si no tiene documento firmado, generar el PDF original
+            // Prioridad 2: Generar el PDF original
             if (!app()->bound('App\Services\PdfGeneratorService')) {
                 abort(503, 'El servicio de generación de PDF no está disponible.');
             }
 
             $pdfService = app('App\Services\PdfGeneratorService');
             $result = $pdfService->generatePermissionRequestPdf($permission);
-            
+
             if (!$result['success']) {
                 abort(500, 'Error al generar el PDF: ' . ($result['message'] ?? 'Error desconocido'));
             }
@@ -368,9 +368,41 @@ class PermissionRequestController extends Controller
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
                 ->header('Pragma', 'no-cache')
                 ->header('Expires', '0');
-                
+
         } catch (\Exception $e) {
             abort(500, 'Error interno al generar el PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Servir la página de tracking separada
+     */
+    public function getTrackingPdf(PermissionRequest $permission)
+    {
+        // Verificar autorización
+        if (!$this->canView($permission)) {
+            abort(403, 'No tiene permisos para ver esta solicitud.');
+        }
+
+        try {
+            $trackingPdfPath = $permission->getTrackingPdfPath();
+
+            if (!$trackingPdfPath || !file_exists($trackingPdfPath)) {
+                abort(404, 'Página de tracking no encontrada.');
+            }
+
+            $fileContent = file_get_contents($trackingPdfPath);
+            $filename = 'tracking_' . $permission->request_number . '.pdf';
+
+            return response($fileContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"')
+                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                ->header('Pragma', 'no-cache')
+                ->header('Expires', '0');
+
+        } catch (\Exception $e) {
+            abort(500, 'Error al servir página de tracking: ' . $e->getMessage());
         }
     }
 

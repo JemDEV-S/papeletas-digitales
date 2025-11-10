@@ -740,13 +740,14 @@
                 
                 <!-- Columna derecha - Visualizador de PDF -->
                 <div class="xl:col-span-1">
-                    <div class="sticky top-4">
+                    <div class="sticky top-4 space-y-4">
+                        <!-- PDF Original (con firmas digitales intactas) -->
                         <div class="bg-white shadow-sm rounded-xl border border-gray-200">
                             <div class="px-4 py-3 border-b border-gray-200">
                                 <div class="flex items-center justify-between">
                                     <h3 class="text-lg font-medium text-gray-900">
                                         <i class="fas fa-file-pdf text-red-600 mr-2"></i>
-                                        Vista Previa PDF
+                                        Solicitud de Permiso
                                         @if($permission->hasSignedDocument())
                                             <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 <i class="fas fa-signature mr-1"></i>
@@ -759,17 +760,17 @@
                                         @endif
                                     </h3>
                                     <div class="flex space-x-2">
-                                        <button onclick="refreshPdfViewer()" 
+                                        <button onclick="refreshPdfViewer()"
                                                 class="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                                 title="Actualizar PDF">
                                             <i class="fas fa-sync-alt text-sm"></i>
                                         </button>
-                                        <button onclick="downloadPdf()" 
+                                        <button onclick="downloadPdf()"
                                                 class="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                                 title="Descargar PDF">
                                             <i class="fas fa-download text-sm"></i>
                                         </button>
-                                        <button onclick="openPdfInNewTab()" 
+                                        <button onclick="openPdfInNewTab()"
                                                 class="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                                 title="Abrir en nueva pestaña">
                                             <i class="fas fa-external-link-alt text-sm"></i>
@@ -779,54 +780,56 @@
                             </div>
                             <div class="p-2">
                                 <!-- Contenedor del PDF -->
-                                <div id="pdf-container" class="bg-gray-100 rounded-lg overflow-hidden" style="height: calc(100vh - 200px);">
+                                <div id="pdf-container" class="bg-gray-100 rounded-lg overflow-hidden" style="height: calc(50vh - 100px);">
                                     <iframe id="pdf-viewer"
-                                            src="{{ route('permissions.pdf', $permission) }}#toolbar=0&navpanes=0&scrollbar=0&zoom=fit"
+                                            src="{{ route('permissions.pdf', $permission) }}#toolbar=0&navpanes=0&scrollbar=1&zoom=100"
                                             class="w-full h-full border-0 rounded-lg"
                                             title="Vista previa de la solicitud de permiso">
                                     </iframe>
-                                    
-                                    <!-- Mensaje de error si no se puede cargar -->
-                                    <div id="pdf-error" class="hidden flex flex-col items-center justify-center h-full text-gray-500">
-                                        <i class="fas fa-exclamation-triangle text-4xl mb-4 text-yellow-500"></i>
-                                        <p class="text-lg font-medium mb-2">No se pudo cargar la vista previa</p>
-                                        <p class="text-sm mb-4">El PDF puede no estar disponible o su navegador no soporta la vista previa.</p>
-                                        <a href="{{ route('permissions.pdf', $permission) }}" 
-                                           class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                                           target="_blank">
-                                            <i class="fas fa-download mr-2"></i>
-                                            Descargar PDF
-                                        </a>
-                                    </div>
-                                </div>
-                                
-                                <!-- Controles de navegación para PDF -->
-                                <div class="mt-3 flex items-center justify-center space-x-4 text-sm">
-                                    <button onclick="zoomOut()" 
-                                            class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                            title="Reducir zoom">
-                                        <i class="fas fa-search-minus"></i>
-                                    </button>
-                                    <span id="zoom-level" class="text-gray-600 min-w-16 text-center">100%</span>
-                                    <button onclick="zoomIn()" 
-                                            class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                            title="Aumentar zoom">
-                                        <i class="fas fa-search-plus"></i>
-                                    </button>
-                                    <span class="text-gray-400">|</span>
-                                    <button onclick="fitToWidth()" 
-                                            class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                            title="Ajustar al ancho">
-                                        <i class="fas fa-arrows-alt-h"></i>
-                                    </button>
-                                    <button onclick="fitToPage()" 
-                                            class="inline-flex items-center px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                            title="Ajustar a la página">
-                                        <i class="fas fa-expand-arrows-alt"></i>
-                                    </button>
                                 </div>
                             </div>
                         </div>
+
+                        @if($permission->hasTrackingPdf())
+                        <!-- PDF de Tracking (separado) -->
+                        <div class="bg-white shadow-sm rounded-xl border border-gray-200">
+                            <div class="px-4 py-3 border-b border-gray-200">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-medium text-gray-900">
+                                        <i class="fas fa-clock text-blue-600 mr-2"></i>
+                                        Registro de Tracking
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Completado
+                                        </span>
+                                    </h3>
+                                    <div class="flex space-x-2">
+                                        <button onclick="downloadTrackingPdf()"
+                                                class="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                                title="Descargar Tracking">
+                                            <i class="fas fa-download text-sm"></i>
+                                        </button>
+                                        <button onclick="printBothDocuments()"
+                                                class="inline-flex items-center px-3 py-1 border border-transparent rounded text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                                                title="Imprimir todo">
+                                            <i class="fas fa-print text-sm mr-1"></i>
+                                            Imprimir Todo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-2">
+                                <!-- Contenedor del PDF de tracking -->
+                                <div id="tracking-pdf-container" class="bg-gray-100 rounded-lg overflow-hidden" style="height: calc(40vh - 100px);">
+                                    <iframe id="tracking-pdf-viewer"
+                                            src="{{ route('permissions.tracking-pdf', $permission) }}#toolbar=0&navpanes=0&scrollbar=1&zoom=100"
+                                            class="w-full h-full border-0 rounded-lg"
+                                            title="Registro de tracking">
+                                    </iframe>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -847,6 +850,9 @@
         // Variables globales para el visualizador PDF
         let currentZoom = 100;
         const pdfUrl = "{{ route('permissions.pdf', $permission) }}";
+        @if($permission->hasTrackingPdf())
+        const trackingPdfUrl = "{{ route('permissions.tracking-pdf', $permission) }}";
+        @endif
         
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializar visualizador PDF
@@ -912,6 +918,31 @@
             link.click();
             document.body.removeChild(link);
         }
+
+        @if($permission->hasTrackingPdf())
+        function downloadTrackingPdf() {
+            const link = document.createElement('a');
+            link.href = trackingPdfUrl;
+            link.download = 'tracking_{{ $permission->request_number }}.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function printBothDocuments() {
+            // Abrir ambos PDFs en ventanas nuevas para que el usuario los imprima juntos
+            const originalWindow = window.open(pdfUrl, '_blank');
+            setTimeout(() => {
+                const trackingWindow = window.open(trackingPdfUrl, '_blank');
+
+                // Mensaje al usuario
+                alert('Se han abierto ambos documentos en pestañas separadas.\n\n' +
+                      '1. PDF de Solicitud (con firmas digitales)\n' +
+                      '2. Página de Tracking\n\n' +
+                      'Use Ctrl+P para imprimir cada uno o use "Imprimir como PDF" del navegador para combinarlos.');
+            }, 500);
+        }
+        @endif
         
         function openPdfInNewTab() {
             window.open(pdfUrl, '_blank');

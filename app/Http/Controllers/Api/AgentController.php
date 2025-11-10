@@ -322,12 +322,33 @@ class AgentController extends Controller
             // Registrar entrada
             if ($tracking->tracking_status === PermissionTracking::STATUS_OUT) {
                 $success = $tracking->registerReturn($currentUser, 'Registrado por ZKTeco Agent');
-                
+
                 if ($success) {
                     // Actualizar la fecha/hora de regreso con la del dispositivo
                     $tracking->return_datetime = $eventDateTime;
                     $tracking->calculateActualHours();
                     $tracking->save();
+
+                    // Generar PDF con overlay de tracking
+                    try {
+                        $pdfService = app(\App\Services\PdfGeneratorService::class);
+                        $result = $pdfService->addTrackingOverlay($tracking->permissionRequest);
+
+                        if ($result['success']) {
+                            Log::info('PDF con tracking generado por agente', [
+                                'permission_id' => $tracking->permissionRequest->id,
+                                'pdf_path' => $result['pdf_path'],
+                                'agent_id' => $eventData['agent_id'] ?? null
+                            ]);
+                        } else {
+                            Log::warning('No se pudo generar PDF con tracking por agente', [
+                                'permission_id' => $tracking->permissionRequest->id,
+                                'error' => $result['message']
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error al generar PDF con tracking por agente: ' . $e->getMessage());
+                    }
 
                     return [
                         'success' => true,

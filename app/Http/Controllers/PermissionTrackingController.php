@@ -201,13 +201,33 @@ class PermissionTrackingController extends Controller
         }
 
         $tracking = PermissionTracking::findOrFail($request->tracking_id);
-        
+
         if ($tracking->registerReturn(Auth::user(), $request->notes)) {
 
             // Update permission request status to completed
             $tracking->permissionRequest->update([
                 'status' => PermissionRequest::STATUS_APPROVED
             ]);
+
+            // Generar PDF con overlay de tracking
+            try {
+                $pdfService = app(\App\Services\PdfGeneratorService::class);
+                $result = $pdfService->addTrackingOverlay($tracking->permissionRequest);
+
+                if ($result['success']) {
+                    \Log::info('PDF con tracking generado', [
+                        'permission_id' => $tracking->permissionRequest->id,
+                        'pdf_path' => $result['pdf_path']
+                    ]);
+                } else {
+                    \Log::warning('No se pudo generar PDF con tracking', [
+                        'permission_id' => $tracking->permissionRequest->id,
+                        'error' => $result['message']
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error al generar PDF con tracking: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'success' => true,

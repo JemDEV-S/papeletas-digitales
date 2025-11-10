@@ -39,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Solicitudes de permisos - Todos los usuarios autenticados pueden acceder
     Route::resource('permissions', PermissionRequestController::class);
     Route::get('/permissions/{permission}/pdf', [PermissionRequestController::class, 'generatePdf'])->name('permissions.pdf');
+    Route::get('/permissions/{permission}/tracking-pdf', [PermissionRequestController::class, 'getTrackingPdf'])->name('permissions.tracking-pdf');
     Route::post('/permissions/{permission}/submit', [PermissionRequestController::class, 'submit'])->name('permissions.submit');
     Route::post('/permissions/{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
     Route::post('/permissions/{permission}/documents', [PermissionRequestController::class, 'uploadDocument'])->name('permissions.documents.upload');

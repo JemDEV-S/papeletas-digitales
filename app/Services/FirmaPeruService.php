@@ -963,18 +963,18 @@ class FirmaPeruService
         $positions = [
             'employee' => [
                 'positionx' => 90,   // Caja izquierda - Empleado
-                'positiony' => 460,
+                'positiony' => 430,
                 'role' => 'Empleado'
             ],
             'level1_supervisor' => [
                 'positionx' => 270,  // Caja centro - Jefe Inmediato
-                'positiony' => 460,
+                'positiony' => 430,
                 'role' => 'Jefe Inmediato'
             ],
             'level2_hr' => [
                 'positionx' => 430,  // Caja derecha - RRHH
-                'positiony' => 460,
-                'role' => 'Recursos Humanos'
+                'positiony' => 430,
+                'role' => 'Escalafon RRHH'
             ]
         ];
 
