@@ -37,7 +37,7 @@
         
         .header .request-number {
             margin: 5px 0 0 0;
-            font-size: 11px;
+            font-size: 14px;
             font-weight: bold;
             color: #dc2626;
         }
@@ -242,8 +242,8 @@
     <!-- Encabezado Compacto -->
     <div class="header">
         <h1>MUNICIPALIDAD DISTRITAL DE SAN JERÓNIMO</h1>
-        <h2>PAPELETA DE SOLICITUD DE PERMISO</h2>
-        <div class="request-number">N° {{ $request->request_number }} | {{ now()->format('d/m/Y H:i') }}</div>
+        <h2>PAPELETA DE SOLICITUD DE SALIDA</h2>
+        <div class="request-number">N° {{ $request->request_number }}</div>
     </div>
 
     <!-- Layout Principal en 2 Columnas -->
@@ -266,8 +266,6 @@
                             <tr>
                                 <td class="label">Departamento:</td>
                                 <td class="value">{{ $request->user->department->name ?? 'N/A' }}</td>
-                                <td class="label">Email:</td>
-                                <td class="value">{{ $request->user->email }}</td>
                             </tr>
                             <tr>
                                 <td class="label">Jefe Inmediato:</td>
@@ -344,35 +342,6 @@
 
             <!-- Columna Derecha: Marco Legal y Información Adicional -->
             <div class="compact-right">
-                
-                <!-- Información de Permisos -->
-                <div class="highlight-box">
-                    <div style="font-weight: bold; font-size: 9px; margin-bottom: 4px;">CONDICIONES DEL PERMISO</div>
-                    <div style="font-size: 8px; line-height: 1.2;">
-                        @if($request->permissionType->with_pay)
-                            ✓ Con goce de haber<br>
-                        @else
-                            ✗ Sin goce de haber<br>
-                        @endif
-                        
-                        @if($request->permissionType->max_hours_per_day)
-                            • Máx. {{ $request->permissionType->max_hours_per_day }}h/día<br>
-                        @endif
-                        
-                        @if($request->permissionType->max_hours_per_month)
-                            • Máx. {{ $request->permissionType->max_hours_per_month }}h/mes<br>
-                        @endif
-                        
-                        @if($request->permissionType->max_times_per_month)
-                            • Máx. {{ $request->permissionType->max_times_per_month }} veces/mes<br>
-                        @endif
-                        
-                        @if($request->permissionType->requires_document)
-                            • Requiere documentación<br>
-                        @endif
-                    </div>
-                </div>
-
                 <!-- Marco Legal -->
                 <div class="section">
                     <div class="section-header">MARCO LEGAL</div>
