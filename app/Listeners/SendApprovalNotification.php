@@ -75,9 +75,15 @@ class SendApprovalNotification implements ShouldQueue
         // Notificar al empleado solicitante
         $this->notifyEmployee($permission, $approver, $nextApprover !== null);
 
-        // Si hay siguiente aprobador, notificarle
+        // Si hay siguiente aprobador, verificar si es nivel RRHH
         if ($nextApprover) {
-            $this->notifyNextApprover($permission, $nextApprover, $approver);
+            // Si el siguiente aprobador es RRHH, notificar a TODOS los jefes de RRHH
+            if ($nextApprover->hasRole('jefe_rrhh')) {
+                $this->notifyAllHRChiefs($permission, $approver);
+            } else {
+                // Si no es RRHH, solo notificar al siguiente aprobador específico
+                $this->notifyNextApprover($permission, $nextApprover, $approver);
+            }
         }
 
         // Si es aprobación final, notificar a jefe inmediato también
@@ -90,6 +96,7 @@ class SendApprovalNotification implements ShouldQueue
             'approver_id' => $approver->id,
             'is_final' => !$nextApprover,
             'next_approver_id' => $nextApprover?->id,
+            'notified_all_hr' => $nextApprover && $nextApprover->hasRole('jefe_rrhh'),
         ]);
     }
 
@@ -155,7 +162,7 @@ class SendApprovalNotification implements ShouldQueue
     private function notifyImmediateSupervisor($permission, $hrApprover): void
     {
         $supervisor = User::find($permission->user->immediate_supervisor_id);
-        
+
         if ($supervisor) {
             SendEmailNotification::dispatch(
                 $supervisor->email,
@@ -172,6 +179,60 @@ class SendApprovalNotification implements ShouldQueue
                     'dashboard_url' => route('approvals.index'),
                 ]
             );
+        }
+    }
+
+    /**
+     * Notificar a TODOS los jefes de RRHH cuando una solicitud pasa al nivel 2
+     */
+    private function notifyAllHRChiefs($permission, $previousApprover): void
+    {
+        // Obtener TODOS los usuarios con rol jefe_rrhh
+        $allHRChiefs = User::whereHas('role', function ($query) {
+            $query->where('name', 'jefe_rrhh');
+        })->get();
+
+        if ($allHRChiefs->isEmpty()) {
+            Log::warning('No HR chiefs found to notify', [
+                'permission_id' => $permission->id,
+            ]);
+            return;
+        }
+
+        Log::info('Notifying all HR chiefs', [
+            'permission_id' => $permission->id,
+            'hr_chiefs_count' => $allHRChiefs->count(),
+            'hr_chiefs_ids' => $allHRChiefs->pluck('id')->toArray(),
+        ]);
+
+        // Notificar a cada jefe de RRHH
+        foreach ($allHRChiefs as $hrChief) {
+            // Crear notificación en BD para cada jefe de RRHH
+            $notification = Notification::createForPermissionSubmitted(
+                $permission,
+                $hrChief,
+                $previousApprover
+            );
+
+            // Enviar email a cada jefe de RRHH
+            SendEmailNotification::dispatch(
+                $hrChief->email,
+                'Nueva Solicitud de Permiso Pendiente - Aprobación RRHH',
+                'emails.permission-next-approval',
+                [
+                    'approver_name' => $hrChief->name,
+                    'employee_name' => $permission->user->name,
+                    'previous_approver' => $previousApprover->name,
+                    'permission_type' => $permission->permissionType->name,
+                    'request_number' => $permission->request_number,
+                    'reason' => $permission->reason,
+                    'approval_url' => route('approvals.show', $permission->id),
+                    'dashboard_url' => route('approvals.index'),
+                ]
+            );
+
+            // Marcar notificación como enviada por email
+            $notification->markEmailAsSent();
         }
     }
 }
