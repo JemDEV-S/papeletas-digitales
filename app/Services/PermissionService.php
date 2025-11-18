@@ -95,8 +95,28 @@ class PermissionService
     public function approve(PermissionRequest $permissionRequest, User $approver, ?string $comments = null): bool
     {
         $approval = $permissionRequest->currentApproval();
-        
-        if (!$approval || $approval->approver_id !== $approver->id) {
+
+        if (!$approval) {
+            return false;
+        }
+
+        // Validar que el aprobador tenga permisos
+        // Para nivel 1 (jefe inmediato): debe ser el supervisor asignado específicamente
+        // Para nivel 2 (RRHH): cualquier usuario con rol jefe_rrhh puede aprobar
+        if ($permissionRequest->current_approval_level === 1) {
+            // Nivel 1: validación estricta - debe ser el jefe inmediato asignado
+            if ($approval->approver_id !== $approver->id) {
+                return false;
+            }
+        } elseif ($permissionRequest->current_approval_level === 2) {
+            // Nivel 2: cualquier jefe de RRHH puede aprobar
+            if (!$approver->hasRole('jefe_rrhh')) {
+                return false;
+            }
+            // Actualizar el approver_id al usuario que realmente está aprobando
+            $approval->approver_id = $approver->id;
+        } else {
+            // Nivel desconocido
             return false;
         }
 
@@ -154,8 +174,28 @@ class PermissionService
     public function reject(PermissionRequest $permissionRequest, User $approver, string $comments): bool
     {
         $approval = $permissionRequest->currentApproval();
-        
-        if (!$approval || $approval->approver_id !== $approver->id) {
+
+        if (!$approval) {
+            return false;
+        }
+
+        // Validar que el aprobador tenga permisos
+        // Para nivel 1 (jefe inmediato): debe ser el supervisor asignado específicamente
+        // Para nivel 2 (RRHH): cualquier usuario con rol jefe_rrhh puede rechazar
+        if ($permissionRequest->current_approval_level === 1) {
+            // Nivel 1: validación estricta - debe ser el jefe inmediato asignado
+            if ($approval->approver_id !== $approver->id) {
+                return false;
+            }
+        } elseif ($permissionRequest->current_approval_level === 2) {
+            // Nivel 2: cualquier jefe de RRHH puede rechazar
+            if (!$approver->hasRole('jefe_rrhh')) {
+                return false;
+            }
+            // Actualizar el approver_id al usuario que realmente está rechazando
+            $approval->approver_id = $approver->id;
+        } else {
+            // Nivel desconocido
             return false;
         }
 
