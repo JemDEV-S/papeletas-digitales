@@ -223,11 +223,6 @@
                                 Recordar sesión
                             </span>
                         </label>
-
-                        <a class="text-sm text-municipal-blue hover:text-municipal-dark font-medium hover:underline focus:outline-none focus:ring-2 focus:ring-municipal-light/50 focus:ring-offset-2 rounded-md px-2 py-1 transition-all" 
-                           href="#forgot-password">
-                            ¿Olvidó su contraseña?
-                        </a>
                     </div>
 
                     <!-- Botón de envío -->

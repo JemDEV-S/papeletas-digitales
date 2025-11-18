@@ -741,6 +741,7 @@
                 <!-- Columna derecha - Visualizador de PDF -->
                 <div class="xl:col-span-1">
                     <div class="sticky top-4 space-y-4">
+                        @if($permission->hasSignedDocument())
                         <!-- PDF Original (con firmas digitales intactas) -->
                         <div class="bg-white shadow-sm rounded-xl border border-gray-200">
                             <div class="px-4 py-3 border-b border-gray-200">
@@ -748,16 +749,10 @@
                                     <h3 class="text-lg font-medium text-gray-900">
                                         <i class="fas fa-file-pdf text-red-600 mr-2"></i>
                                         Solicitud de Permiso
-                                        @if($permission->hasSignedDocument())
-                                            <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                <i class="fas fa-signature mr-1"></i>
-                                                Firmado
-                                            </span>
-                                        @else
-                                            <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                Original
-                                            </span>
-                                        @endif
+                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <i class="fas fa-signature mr-1"></i>
+                                            Firmado
+                                        </span>
                                     </h3>
                                     <div class="flex space-x-2">
                                         <button onclick="refreshPdfViewer()"
@@ -789,6 +784,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         @if($permission->hasTrackingPdf())
                         <!-- PDF de Tracking (separado) -->
@@ -855,24 +851,25 @@
         @endif
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar visualizador PDF
-            initializePdfViewer();
-            
+            // Inicializar visualizador PDF solo si existe
+            if (document.getElementById('pdf-viewer')) {
+                initializePdfViewer();
+            }
+
             // Esperar a que jQuery esté disponible
             function initializeFirmaPeru() {
                 if (typeof window.jqFirmaPeru !== 'undefined') {
                     console.log('✅ Inicializando FIRMA PERÚ...');
                     // Inicializar integración FIRMA PERÚ
                     window.firmaPeruIntegration = new FirmaPeruIntegration();
-                    
+
                     // Actualizar estado de firmas al cargar la página
                     window.firmaPeruIntegration.updateSignatureStatus();
-                    
+
                     // Configurar callback para actualizar PDF después de firma
                     window.firmaPeruIntegration.onSignatureComplete = function() {
                         console.log('✅ Firma completada - Actualizando vista PDF...');
-                        refreshPdfViewer();
-                        // También recargar la página después de un momento para actualizar todos los elementos
+                        // Recargar la página para mostrar el PDF generado
                         setTimeout(() => {
                             location.reload();
                         }, 2000);
@@ -882,7 +879,7 @@
                     setTimeout(initializeFirmaPeru, 100);
                 }
             }
-            
+
             initializeFirmaPeru();
         });
         
@@ -982,25 +979,35 @@
         function refreshPdfViewer() {
             const iframe = document.getElementById('pdf-viewer');
             const errorDiv = document.getElementById('pdf-error');
-            
+
+            // Verificar que el iframe existe
+            if (!iframe) {
+                console.log('⚠️ PDF viewer no encontrado, recargando página...');
+                location.reload();
+                return;
+            }
+
             // Agregar timestamp para evitar caché
             const timestamp = new Date().getTime();
             const newUrl = pdfUrl + '?t=' + timestamp + '#toolbar=0&navpanes=0&scrollbar=0&zoom=' + currentZoom;
-            
+
             console.log('🔄 Actualizando PDF viewer con URL:', newUrl);
-            
+
             // Ocultar error div si estaba visible
-            errorDiv.classList.add('hidden');
+            if (errorDiv) {
+                errorDiv.classList.add('hidden');
+            }
             iframe.style.display = 'block';
-            
+
             // Cargar nueva URL
             iframe.src = newUrl;
         }
         
         // Atajos de teclado para el visualizador
         document.addEventListener('keydown', function(e) {
-            // Solo activar si el foco está en el área del PDF
-            if (document.activeElement.closest('#pdf-container')) {
+            // Solo activar si el foco está en el área del PDF y existe
+            const pdfContainer = document.getElementById('pdf-container');
+            if (pdfContainer && document.activeElement.closest('#pdf-container')) {
                 switch(e.key) {
                     case '+':
                     case '=':
@@ -1018,9 +1025,12 @@
                 }
             }
         });
-        
+
         // Hacer el contenedor PDF focusable para los atajos de teclado
-        document.getElementById('pdf-container').setAttribute('tabindex', '0');
+        const pdfContainer = document.getElementById('pdf-container');
+        if (pdfContainer) {
+            pdfContainer.setAttribute('tabindex', '0');
+        }
     </script>
     @endpush
 </x-app-layout>
