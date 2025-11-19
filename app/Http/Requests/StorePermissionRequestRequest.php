@@ -50,6 +50,10 @@ class StorePermissionRequestRequest extends FormRequest
                 'string',
                 'in:certificado_medico,citacion,acreditacion,resolucion_nombramiento,horario_ensenanza,horario_recuperacion,partida_nacimiento,declaracion_jurada,otros',
             ],
+            'skip_immediate_supervisor' => [
+                'nullable',
+                'boolean',
+            ],
         ];
     }
 

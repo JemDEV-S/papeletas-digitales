@@ -256,11 +256,59 @@ class FirmaPeruController extends Controller
     /**
      * Iniciar proceso de firma para jefe inmediato (Level 1)
      */
+    // public function initiateLevel1Signature(PermissionRequest $permission): JsonResponse
+    // {
+    //     try {
+    //         // Verificar autorización
+    //         if (!auth()->user()->hasRole('jefe_inmediato') && !auth()->user()->hasRole('admin')) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'No autorizado para aprobar esta solicitud'
+    //             ], 403);
+    //         }
+
+    //         // Verificar estado
+    //         if ($permission->status !== PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'La solicitud no está en estado de aprobación de jefe inmediato'
+    //             ], 400);
+    //         }
+
+    //         $result = $this->firmaPeruService->prepareLevel1SignatureParams($permission);
+            
+    //         return response()->json($result);
+
+    //     } catch (\Exception $e) {
+    //         Log::error('Error al iniciar firma de jefe inmediato', [
+    //             'permission_id' => $permission->id,
+    //             'user_id' => auth()->id(),
+    //             'error' => $e->getMessage()
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Error interno al iniciar proceso de firma'
+    //         ], 500);
+    //     }
+    // }
     public function initiateLevel1Signature(PermissionRequest $permission): JsonResponse
     {
         try {
-            // Verificar autorización
-            if (!auth()->user()->hasRole('jefe_inmediato') && !auth()->user()->hasRole('admin')) {
+            $user = auth()->user();
+            
+            // Verificar si es caso especial (RRHH aprueba nivel 1 porque no hay jefe inmediato)
+            $skipImmediateSupervisor = $permission->metadata['skip_immediate_supervisor'] ?? false;
+            
+            // Autorización normal: jefe inmediato o admin
+            $isImmediateBoss = $user->hasRole('jefe_inmediato') || $user->hasRole('admin');
+            
+            // Autorización especial: RRHH cuando skip_immediate_supervisor es true
+            $isHrSpecialCase = $user->hasRole('jefe_rrhh') && 
+                            $skipImmediateSupervisor && 
+                            $permission->current_approval_level === 1;
+            
+            if (!$isImmediateBoss && !$isHrSpecialCase) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No autorizado para aprobar esta solicitud'

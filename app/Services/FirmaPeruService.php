@@ -230,6 +230,104 @@ class FirmaPeruService
         ];
     }
 
+    // /**
+    //  * Preparar parámetros de firma para jefe inmediato (Stage 2)
+    //  */
+    // public function prepareLevel1SignatureParams(PermissionRequest $permission): array
+    // {
+    //     $tokenResult = $this->generateToken();
+        
+    //     if (!$tokenResult['success']) {
+    //         return $tokenResult;
+    //     }
+
+    //     // Verificar que existe firma del empleado
+    //     if (!$this->hasValidEmployeeSignature($permission)) {
+    //         return [
+    //             'success' => false,
+    //             'message' => 'La solicitud debe estar firmada por el empleado primero'
+    //         ];
+    //     }
+
+    //     $paramToken = Str::random(32);
+    //     $documentUrl = url('/api/firma-peru/signed-document/' . $permission->id) . '?token=' . $paramToken;
+        
+    //     $currentUserId = auth()->id();
+        
+    //     Log::info('Creando token para firma level1', [
+    //         'permission_id' => $permission->id,
+    //         'current_user_id' => $currentUserId,
+    //         'auth_check' => auth()->check(),
+    //         'auth_user' => auth()->user() ? auth()->user()->id : null
+    //     ]);
+        
+    //     $tokenData = [
+    //         'permission_id' => $permission->id,
+    //         'user_id' => $currentUserId,
+    //         'signature_type' => 'level1_supervisor',
+    //         'expires_at' => now()->addMinutes(30),
+    //         'encoded_params' => null // Se almacenará después de generar los parámetros
+    //     ];
+    //     cache()->put("firma_token_{$paramToken}", $tokenData, 1800);
+    //     $this->storeActiveSignatureIndex($paramToken, $tokenData);
+
+    //     // Obtener posición automática según el tipo de usuario
+    //     $signaturePosition = $this->getSignaturePosition('level1_supervisor');
+        
+    //     $params = [
+    //         'signatureFormat' => 'PAdES',
+    //         'signatureLevel' => 'B',
+    //         'signaturePackaging' => 'enveloped',
+    //         'documentToSign' => $documentUrl,
+    //         'certificateFilter' => '.*', // Detectar todos los certificados disponibles
+    //         'theme' => 'claro',
+    //         'visiblePosition' => false, // Desactivar selección manual para usar posiciones automáticas
+    //         'signatureReason' => 'Aprobación de solicitud de permiso - Jefe Inmediato',
+    //         'bachtOperation' => false,
+    //         'oneByOne' => true,
+    //         'signatureStyle' => 4, // Solo descripción, sin imagen para evitar error "no protocol"
+    //         'stampTextSize' => 14,
+    //         'stampWordWrap' => 37,
+    //         'role' => $signaturePosition['role'],
+    //         'stampPage' => 1,
+    //         'positionx' => $signaturePosition['positionx'],
+    //         'positiony' => $signaturePosition['positiony'],
+    //         'uploadDocumentSigned' => url('/api/firma-peru/upload/' . $permission->id),
+    //         'certificationSignature' => false,
+    //         'token' => $tokenResult['token']
+    //     ];
+
+    //     // Log para debugging - verificar parámetros antes de codificar
+    //     Log::info('Parámetros de firma generados (level1)', [
+    //         'documentToSign' => $params['documentToSign'],
+    //         'uploadDocumentSigned' => $params['uploadDocumentSigned'],
+    //         'signatureReason' => $params['signatureReason'],
+    //         'role' => $params['role'],
+    //         'signatureFormat' => $params['signatureFormat'],
+    //         'signatureStyle' => $params['signatureStyle'],
+    //         'positionx' => $params['positionx'],
+    //         'positiony' => $params['positiony'],
+    //         'stampPage' => $params['stampPage'],
+    //         'visiblePosition' => $params['visiblePosition']
+    //     ]);
+
+    //     // Codificar los parámetros en JSON y luego en Base64 según documentación
+    //     $encodedParams = base64_encode(json_encode($params));
+        
+    //     // Actualizar el caché con los parámetros codificados
+    //     $tokenData['encoded_params'] = $encodedParams;
+    //     cache()->put("firma_token_{$paramToken}", $tokenData, 1800);
+    //     $this->storeActiveSignatureIndex($paramToken, $tokenData);
+        
+    //     return [
+    //         'success' => true,
+    //         'params' => $encodedParams,
+    //         'param_token' => $paramToken,
+    //         'js_url' => $this->jsUrl,
+    //         'port' => $this->port
+    //     ];
+    // }
+
     /**
      * Preparar parámetros de firma para jefe inmediato (Stage 2)
      */
@@ -253,10 +351,17 @@ class FirmaPeruService
         $documentUrl = url('/api/firma-peru/signed-document/' . $permission->id) . '?token=' . $paramToken;
         
         $currentUserId = auth()->id();
+        $currentUser = auth()->user();
+        
+        // Detectar si es caso especial: RRHH firmando en nivel 1
+        $skipImmediateSupervisor = $permission->metadata['skip_immediate_supervisor'] ?? false;
+        $isHrSigningLevel1 = $currentUser->hasRole('jefe_rrhh') && $skipImmediateSupervisor;
         
         Log::info('Creando token para firma level1', [
             'permission_id' => $permission->id,
             'current_user_id' => $currentUserId,
+            'is_hr_special_case' => $isHrSigningLevel1,
+            'skip_immediate_supervisor' => $skipImmediateSupervisor,
             'auth_check' => auth()->check(),
             'auth_user' => auth()->user() ? auth()->user()->id : null
         ]);
@@ -265,27 +370,35 @@ class FirmaPeruService
             'permission_id' => $permission->id,
             'user_id' => $currentUserId,
             'signature_type' => 'level1_supervisor',
+            'is_hr_special_case' => $isHrSigningLevel1,
             'expires_at' => now()->addMinutes(30),
-            'encoded_params' => null // Se almacenará después de generar los parámetros
+            'encoded_params' => null
         ];
         cache()->put("firma_token_{$paramToken}", $tokenData, 1800);
         $this->storeActiveSignatureIndex($paramToken, $tokenData);
 
-        // Obtener posición automática según el tipo de usuario
-        $signaturePosition = $this->getSignaturePosition('level1_supervisor');
+        // Si es RRHH firmando en nivel 1 (caso especial), usar su posición de RRHH
+        // Si es Jefe Inmediato normal, usar su posición del centro
+        $signaturePositionType = $isHrSigningLevel1 ? 'level2_hr' : 'level1_supervisor';
+        $signaturePosition = $this->getSignaturePosition($signaturePositionType);
+        
+        // Ajustar el motivo de firma según quién firma
+        $signatureReason = $isHrSigningLevel1 
+            ? 'Aprobación de solicitud de permiso - RRHH (Nivel 1 - Jefe Inmediato No Disponible)'
+            : 'Aprobación de solicitud de permiso - Jefe Inmediato';
         
         $params = [
             'signatureFormat' => 'PAdES',
             'signatureLevel' => 'B',
             'signaturePackaging' => 'enveloped',
             'documentToSign' => $documentUrl,
-            'certificateFilter' => '.*', // Detectar todos los certificados disponibles
+            'certificateFilter' => '.*',
             'theme' => 'claro',
-            'visiblePosition' => false, // Desactivar selección manual para usar posiciones automáticas
-            'signatureReason' => 'Aprobación de solicitud de permiso - Jefe Inmediato',
+            'visiblePosition' => false,
+            'signatureReason' => $signatureReason,
             'bachtOperation' => false,
             'oneByOne' => true,
-            'signatureStyle' => 4, // Solo descripción, sin imagen para evitar error "no protocol"
+            'signatureStyle' => 4,
             'stampTextSize' => 14,
             'stampWordWrap' => 37,
             'role' => $signaturePosition['role'],
@@ -297,7 +410,6 @@ class FirmaPeruService
             'token' => $tokenResult['token']
         ];
 
-        // Log para debugging - verificar parámetros antes de codificar
         Log::info('Parámetros de firma generados (level1)', [
             'documentToSign' => $params['documentToSign'],
             'uploadDocumentSigned' => $params['uploadDocumentSigned'],
@@ -308,13 +420,13 @@ class FirmaPeruService
             'positionx' => $params['positionx'],
             'positiony' => $params['positiony'],
             'stampPage' => $params['stampPage'],
-            'visiblePosition' => $params['visiblePosition']
+            'visiblePosition' => $params['visiblePosition'],
+            'is_hr_special_case' => $isHrSigningLevel1,
+            'signature_position_type' => $signaturePositionType
         ]);
 
-        // Codificar los parámetros en JSON y luego en Base64 según documentación
         $encodedParams = base64_encode(json_encode($params));
         
-        // Actualizar el caché con los parámetros codificados
         $tokenData['encoded_params'] = $encodedParams;
         cache()->put("firma_token_{$paramToken}", $tokenData, 1800);
         $this->storeActiveSignatureIndex($paramToken, $tokenData);

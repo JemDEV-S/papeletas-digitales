@@ -378,6 +378,11 @@
                 <div class="signature-cell">
                     <div class="signature-box">
                         <div class="signature-title">2. JEFE INMEDIATO</div>
+                        @if($request->metadata['skip_immediate_supervisor'] ?? false)
+                            <div style="font-size: 7px; color: #d97706; margin-top: 2px; font-style: italic; text-align: center;">
+                                * Aprobado por RRHH en representación<br>(Jefe no disponible)
+                            </div>
+                        @endif
                     </div>
                 </div>
 

@@ -22,11 +22,21 @@ class PermissionService
     public function createPermissionRequest(User $user, array $data, array $files = []): PermissionRequest
     {
         return DB::transaction(function () use ($user, $data, $files) {
+            // Preparar metadata
+            $metadata = [];
+
+            // Si se marcó que el jefe inmediato no está disponible
+            if (!empty($data['skip_immediate_supervisor'])) {
+                $metadata['skip_immediate_supervisor'] = true;
+                $metadata['skip_reason_timestamp'] = now()->toISOString();
+            }
+
             // Crear la solicitud
             $permissionRequest = $user->permissionRequests()->create([
                 'permission_type_id' => $data['permission_type_id'],
                 'reason' => $data['reason'],
                 'status' => PermissionRequest::STATUS_DRAFT,
+                'metadata' => $metadata,
             ]);
 
             // Subir documentos si existen
@@ -44,9 +54,25 @@ class PermissionService
     public function updatePermissionRequest(PermissionRequest $permissionRequest, array $data): PermissionRequest
     {
         return DB::transaction(function () use ($permissionRequest, $data) {
+            // Preparar metadata
+            $metadata = $permissionRequest->metadata ?? [];
+
+            // Actualizar o agregar el campo skip_immediate_supervisor
+            if (isset($data['skip_immediate_supervisor'])) {
+                $metadata['skip_immediate_supervisor'] = (bool) $data['skip_immediate_supervisor'];
+                if ($data['skip_immediate_supervisor']) {
+                    $metadata['skip_reason_timestamp'] = now()->toISOString();
+                }
+            } elseif (!isset($data['skip_immediate_supervisor']) && isset($metadata['skip_immediate_supervisor'])) {
+                // Si no viene en el request pero existía antes, removerlo
+                unset($metadata['skip_immediate_supervisor']);
+                unset($metadata['skip_reason_timestamp']);
+            }
+
             $permissionRequest->update([
                 'permission_type_id' => $data['permission_type_id'],
                 'reason' => $data['reason'],
+                'metadata' => $metadata,
             ]);
 
             return $permissionRequest;
@@ -63,28 +89,56 @@ class PermissionService
         }
 
         return DB::transaction(function () use ($permissionRequest) {
-            
             $permissionRequest->status = PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS;
             $permissionRequest->submitted_at = now();
             $permissionRequest->current_approval_level = 1;
 
-            // Crear registro de aprobación para el jefe inmediato
-            $permissionRequest->approvals()->create([
-                'approver_id' => $permissionRequest->user->immediate_supervisor_id,
-                'approval_level' => 1,
-                'status' => 'pending',
-            ]);
+            // Verificar si se debe saltar al jefe inmediato
+            $skipImmediateSupervisor = $permissionRequest->metadata['skip_immediate_supervisor'] ?? false;
+
+            if ($skipImmediateSupervisor) {
+                // Caso especial: enviar directo a RRHH
+                $hrChief = $this->getHRChief();
+
+                if ($hrChief) {
+                    $permissionRequest->approvals()->create([
+                        'approver_id' => $hrChief->id,
+                        'approval_level' => 1,
+                        'status' => 'pending',
+                    ]);
+
+                    $approver = $hrChief;
+                }
+            } else {
+                // Flujo normal: crear registro de aprobación para el jefe inmediato
+                $permissionRequest->approvals()->create([
+                    'approver_id' => $permissionRequest->user->immediate_supervisor_id,
+                    'approval_level' => 1,
+                    'status' => 'pending',
+                ]);
+
+                $approver = User::find($permissionRequest->user->immediate_supervisor_id);
+            }
 
             $saved = $permissionRequest->save();
-            
-            if ($saved) {
+
+            if ($saved && isset($approver)) {
                 // Disparar evento de solicitud enviada
-                $approver = User::find($permissionRequest->user->immediate_supervisor_id);
-                if ($approver) {
+                if ($skipImmediateSupervisor) {
+                    // Notificar a TODOS los jefes de RRHH
+                    $allHRChiefs = User::whereHas('role', function ($query) {
+                        $query->where('name', 'jefe_rrhh');
+                    })->get();
+
+                    foreach ($allHRChiefs as $hr) {
+                        event(new PermissionRequestSubmitted($permissionRequest, $hr));
+                    }
+                } else {
+                    // Notificar solo al jefe inmediato
                     event(new PermissionRequestSubmitted($permissionRequest, $approver));
                 }
             }
-            
+
             return $saved;
         });
     }
@@ -101,12 +155,23 @@ class PermissionService
         }
 
         // Validar que el aprobador tenga permisos
-        // Para nivel 1 (jefe inmediato): debe ser el supervisor asignado específicamente
-        // Para nivel 2 (RRHH): cualquier usuario con rol jefe_rrhh puede aprobar
+        // Para nivel 1: jefe inmediato O RRHH si es caso especial
+        // Para nivel 2: cualquier usuario con rol jefe_rrhh puede aprobar
         if ($permissionRequest->current_approval_level === 1) {
-            // Nivel 1: validación estricta - debe ser el jefe inmediato asignado
-            if ($approval->approver_id !== $approver->id) {
-                return false;
+            $skipImmediateSupervisor = $permissionRequest->metadata['skip_immediate_supervisor'] ?? false;
+
+            if ($skipImmediateSupervisor) {
+                // Caso especial: cualquier jefe de RRHH puede aprobar nivel 1
+                if (!$approver->hasRole('jefe_rrhh')) {
+                    return false;
+                }
+                // Actualizar el approver_id al RRHH que está aprobando
+                $approval->approver_id = $approver->id;
+            } else {
+                // Caso normal: debe ser el jefe inmediato asignado
+                if ($approval->approver_id !== $approver->id) {
+                    return false;
+                }
             }
         } elseif ($permissionRequest->current_approval_level === 2) {
             // Nivel 2: cualquier jefe de RRHH puede aprobar
@@ -121,7 +186,11 @@ class PermissionService
         }
 
         return DB::transaction(function () use ($permissionRequest, $approval, $comments, $approver) {
-            // Actualizar la aprobación actual
+            // Verificar si es caso especial (jefe inmediato no disponible)
+            $skipImmediateSupervisor = $permissionRequest->metadata['skip_immediate_supervisor'] ?? false;
+            $isSpecialCase = $skipImmediateSupervisor && $permissionRequest->current_approval_level === 1;
+
+            // Actualizar la aprobación actual (nivel 1)
             $approval->update([
                 'status' => 'approved',
                 'comments' => $comments,
@@ -129,25 +198,22 @@ class PermissionService
             ]);
 
             $nextApprover = null;
-            
-            // Verificar si necesita aprobación de RRHH
-            if ($this->needsHRApproval($permissionRequest)) {
-                $permissionRequest->status = PermissionRequest::STATUS_PENDING_HR;
+
+            if ($isSpecialCase) {
+                // CASO ESPECIAL: Aprobación completa con una sola firma
+                // Crear y aprobar automáticamente nivel 2 con el mismo aprobador
+                $permissionRequest->approvals()->create([
+                    'approver_id' => $approver->id,
+                    'approval_level' => 2,
+                    'status' => 'approved',
+                    'comments' => $comments,
+                    'approved_at' => now(),
+                ]);
+
+                // Marcar como aprobado final
+                $permissionRequest->status = PermissionRequest::STATUS_APPROVED;
                 $permissionRequest->current_approval_level = 2;
 
-                // Crear aprobación para RRHH
-                $hrChief = $this->getHRChief();
-                if ($hrChief) {
-                    $permissionRequest->approvals()->create([
-                        'approver_id' => $hrChief->id,
-                        'approval_level' => 2,
-                        'status' => 'pending',
-                    ]);
-                    $nextApprover = $hrChief;
-                }
-            } else {
-                // Aprobación final
-                $permissionRequest->status = PermissionRequest::STATUS_APPROVED;
                 // Crear registro de seguimiento
                 if (!$permissionRequest->tracking) {
                     $permissionRequest->tracking()->create([
@@ -155,15 +221,46 @@ class PermissionService
                         'tracking_status' => \App\Models\PermissionTracking::STATUS_PENDING,
                     ]);
                 }
+
+                // No hay siguiente aprobador porque se aprobó completamente
+                $nextApprover = null;
+
+            } else {
+                // FLUJO NORMAL: Verificar si necesita aprobación de RRHH
+                if ($this->needsHRApproval($permissionRequest)) {
+                    $permissionRequest->status = PermissionRequest::STATUS_PENDING_HR;
+                    $permissionRequest->current_approval_level = 2;
+
+                    // Crear aprobación para RRHH
+                    $hrChief = $this->getHRChief();
+                    if ($hrChief) {
+                        $permissionRequest->approvals()->create([
+                            'approver_id' => $hrChief->id,
+                            'approval_level' => 2,
+                            'status' => 'pending',
+                        ]);
+                        $nextApprover = $hrChief;
+                    }
+                } else {
+                    // Aprobación final
+                    $permissionRequest->status = PermissionRequest::STATUS_APPROVED;
+                    // Crear registro de seguimiento
+                    if (!$permissionRequest->tracking) {
+                        $permissionRequest->tracking()->create([
+                            'employee_dni' => $permissionRequest->user->dni,
+                            'tracking_status' => \App\Models\PermissionTracking::STATUS_PENDING,
+                        ]);
+                    }
+                }
             }
 
             $saved = $permissionRequest->save();
-            
+
             if ($saved) {
                 // Disparar evento de aprobación
                 event(new PermissionRequestApproved($permissionRequest, $approver, $nextApprover));
             }
-            
+
             return $saved;
         });
     }
@@ -180,12 +277,23 @@ class PermissionService
         }
 
         // Validar que el aprobador tenga permisos
-        // Para nivel 1 (jefe inmediato): debe ser el supervisor asignado específicamente
-        // Para nivel 2 (RRHH): cualquier usuario con rol jefe_rrhh puede rechazar
+        // Para nivel 1: jefe inmediato O RRHH si es caso especial
+        // Para nivel 2: cualquier usuario con rol jefe_rrhh puede rechazar
         if ($permissionRequest->current_approval_level === 1) {
-            // Nivel 1: validación estricta - debe ser el jefe inmediato asignado
-            if ($approval->approver_id !== $approver->id) {
-                return false;
+            $skipImmediateSupervisor = $permissionRequest->metadata['skip_immediate_supervisor'] ?? false;
+
+            if ($skipImmediateSupervisor) {
+                // Caso especial: cualquier jefe de RRHH puede rechazar nivel 1
+                if (!$approver->hasRole('jefe_rrhh')) {
+                    return false;
+                }
+                // Actualizar el approver_id al RRHH que está rechazando
+                $approval->approver_id = $approver->id;
+            } else {
+                // Caso normal: debe ser el jefe inmediato asignado
+                if ($approval->approver_id !== $approver->id) {
+                    return false;
+                }
             }
         } elseif ($permissionRequest->current_approval_level === 2) {
             // Nivel 2: cualquier jefe de RRHH puede rechazar

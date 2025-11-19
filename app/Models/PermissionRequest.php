@@ -506,10 +506,10 @@ class PermissionRequest extends Model
         }
 
         // Jefe inmediato puede firmar si es el supervisor directo del solicitante
-        if ($user->hasRole('jefe_inmediato') && 
+        if ($user->hasRole('jefe_inmediato') &&
             $this->user->immediate_supervisor_id === $user->id &&
-            $this->status === self::STATUS_PENDING_IMMEDIATE_BOSS && 
-            $this->hasEmployeeFirmaPeruSignature() && 
+            $this->status === self::STATUS_PENDING_IMMEDIATE_BOSS &&
+            $this->hasEmployeeFirmaPeruSignature() &&
             !$this->hasLevel1FirmaPeruSignature()) {
             return [
                 'can_sign' => true,
@@ -518,11 +518,27 @@ class PermissionRequest extends Model
             ];
         }
 
+        // CASO ESPECIAL: RRHH puede firmar nivel 1 si el jefe inmediato no está disponible
+        $skipImmediateSupervisor = $this->metadata['skip_immediate_supervisor'] ?? false;
+        if ($user->hasRole('jefe_rrhh') &&
+            $skipImmediateSupervisor &&
+            $this->status === self::STATUS_PENDING_IMMEDIATE_BOSS &&
+            $this->current_approval_level === 1 &&
+            $this->hasEmployeeFirmaPeruSignature() &&
+            !$this->hasLevel1FirmaPeruSignature()) {
+            return [
+                'can_sign' => true,
+                'stage' => 2, // Stage 2 para mostrar el botón amarillo de nivel 1
+                'role' => 'level1_hr_special',
+                'is_special_case' => true
+            ];
+        }
+
         // RRHH puede firmar si la solicitud está pendiente de RRHH y tiene las firmas previas
-        if ($user->hasRole('jefe_rrhh') && 
-            $this->status === self::STATUS_PENDING_HR && 
-            $this->hasEmployeeFirmaPeruSignature() && 
-            $this->hasLevel1FirmaPeruSignature() && 
+        if ($user->hasRole('jefe_rrhh') &&
+            $this->status === self::STATUS_PENDING_HR &&
+            $this->hasEmployeeFirmaPeruSignature() &&
+            $this->hasLevel1FirmaPeruSignature() &&
             !$this->hasLevel2FirmaPeruSignature()) {
             return [
                 'can_sign' => true,
@@ -562,10 +578,23 @@ class PermissionRequest extends Model
                 return 'La solicitud ya está firmada por el jefe inmediato';
             }
         } elseif ($user->hasRole('jefe_rrhh')) {
-            if ($this->status !== self::STATUS_PENDING_HR) {
+            $skipImmediateSupervisor = $this->metadata['skip_immediate_supervisor'] ?? false;
+
+            // Caso especial: RRHH puede firmar en nivel 1
+            if ($skipImmediateSupervisor && $this->status === self::STATUS_PENDING_IMMEDIATE_BOSS) {
+                if (!$this->hasEmployeeFirmaPeruSignature()) {
+                    return 'La solicitud debe estar firmada por el empleado primero';
+                }
+                if ($this->hasLevel1FirmaPeruSignature()) {
+                    return 'La solicitud ya está firmada para nivel 1';
+                }
+            }
+
+            // Caso normal: RRHH firma en nivel 2
+            if ($this->status !== self::STATUS_PENDING_HR && !$skipImmediateSupervisor) {
                 return 'La solicitud no está pendiente de aprobación de RRHH';
             }
-            if (!$this->hasLevel1FirmaPeruSignature()) {
+            if (!$this->hasLevel1FirmaPeruSignature() && !$skipImmediateSupervisor) {
                 return 'La solicitud debe estar firmada por empleado y jefe inmediato primero';
             }
             if ($this->hasLevel2FirmaPeruSignature()) {

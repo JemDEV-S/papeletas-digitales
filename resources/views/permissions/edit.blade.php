@@ -133,6 +133,47 @@
                         @enderror
                     </div>
 
+                    <!-- Sección de aprobación especial -->
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 rounded-r-lg p-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center">
+                                    <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <h4 class="text-base font-semibold text-yellow-900 mb-2">
+                                    ¿Tu jefe inmediato no está disponible?
+                                </h4>
+                                <p class="text-sm text-yellow-700 mb-3 leading-relaxed">
+                                    Si tu jefe inmediato <strong>{{ auth()->user()->immediateSupervisor->name ?? 'N/A' }}</strong>
+                                    no se encuentra disponible (vacaciones, viaje, enfermedad, reunión fuera de oficina, etc.),
+                                    marca esta opción para que tu solicitud sea revisada directamente por Recursos Humanos.
+                                </p>
+                                <div class="flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input type="checkbox"
+                                               name="skip_immediate_supervisor"
+                                               id="skip_immediate_supervisor"
+                                               value="1"
+                                               class="w-4 h-4 rounded border-2 border-yellow-400 text-yellow-600 shadow-sm focus:border-yellow-500 focus:ring focus:ring-yellow-200 focus:ring-opacity-50 cursor-pointer"
+                                               {{ old('skip_immediate_supervisor', $permission->metadata['skip_immediate_supervisor'] ?? false) ? 'checked' : '' }}>
+                                    </div>
+                                    <div class="ml-2">
+                                        <label for="skip_immediate_supervisor" class="font-medium text-yellow-900 cursor-pointer text-sm">
+                                            Mi jefe inmediato no está disponible - Enviar directo a RRHH
+                                        </label>
+                                        <p class="text-xs text-yellow-600 mt-1">
+                                            ⚠️ Al marcar esta opción, RRHH realizará ambas aprobaciones (Nivel 1 y Nivel 2)
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Documentos actuales -->
                     @if($permission->documents->count() > 0)
                         <div>

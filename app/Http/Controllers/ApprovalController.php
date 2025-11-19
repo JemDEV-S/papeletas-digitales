@@ -360,14 +360,27 @@ class ApprovalController extends Controller
                 // Solo solicitudes de subordinados directos
                 $subordinateIds = $user->subordinates->pluck('id');
                 $query->whereIn('user_id', $subordinateIds)
-                      ->where('status', PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS);
+                      ->where('status', PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS)
+                      // Excluir las que tienen skip_immediate_supervisor
+                      ->where(function($q) {
+                          $q->whereNull('metadata->skip_immediate_supervisor')
+                            ->orWhereJsonContains('metadata->skip_immediate_supervisor', false);
+                      });
             } elseif ($user->hasRole('jefe_rrhh')) {
-                // Solicitudes pendientes de RRHH
-                $query->where('status', PermissionRequest::STATUS_PENDING_HR);
+                // Solicitudes pendientes de RRHH:
+                // 1. En estado pending_hr (nivel 2 normal)
+                // 2. En estado pending_immediate_boss CON skip_immediate_supervisor (nivel 1 especial)
+                $query->where(function($q) {
+                    $q->where('status', PermissionRequest::STATUS_PENDING_HR)
+                      ->orWhere(function($subQ) {
+                          $subQ->where('status', PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS)
+                               ->whereJsonContains('metadata->skip_immediate_supervisor', true);
+                      });
+                });
             } elseif ($user->hasRole('admin')) {
                 // Admin puede ver todas las pendientes
                 $query->whereIn('status', [
-                    PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS, 
+                    PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS,
                     PermissionRequest::STATUS_PENDING_HR
                 ]);
             } else {
@@ -407,15 +420,24 @@ class ApprovalController extends Controller
         if ($permission->user->immediate_supervisor_id === $user->id) {
             return PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS;
         }
-        
+
         if ($user->hasRole('jefe_rrhh')) {
+            // Verificar si es caso especial (jefe inmediato no disponible)
+            $skipImmediateSupervisor = $permission->metadata['skip_immediate_supervisor'] ?? false;
+
+            if ($skipImmediateSupervisor && $permission->current_approval_level === 1) {
+                // Caso especial: RRHH aprueba nivel 1
+                return PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS;
+            }
+
+            // Caso normal: RRHH aprueba nivel 2
             return PermissionRequest::STATUS_PENDING_HR;
         }
-        
+
         if ($user->hasRole('admin')) {
             return $permission->status; // Admin puede aprobar en cualquier estado
         }
-        
+
         return '';
     }
 

@@ -341,14 +341,30 @@
                             @if($canUserSign['can_sign'])
                                 <div class="mb-6">
                                     @if($canUserSign['stage'] === 2)
-                                        <!-- Botón para firma de jefe inmediato -->
+                                        <!-- Botón para firma de jefe inmediato o RRHH en caso especial -->
+                                        @php
+                                            $isSpecialCase = $canUserSign['is_special_case'] ?? false;
+                                        @endphp
                                         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                             <div class="flex items-center justify-between">
                                                 <div>
-                                                    <h4 class="font-medium text-yellow-900">Requiere su firma digital antes de aprobar</h4>
-                                                    <p class="text-sm text-yellow-700">Para aprobar esta solicitud, primero debe firmarla digitalmente con FIRMA PERÚ.</p>
+                                                    <h4 class="font-medium text-yellow-900">
+                                                        Requiere su firma digital antes de aprobar
+                                                        @if($isSpecialCase)
+                                                            <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                Caso Especial
+                                                            </span>
+                                                        @endif
+                                                    </h4>
+                                                    <p class="text-sm text-yellow-700">
+                                                        @if($isSpecialCase)
+                                                            Como jefe de RRHH, debe firmar digitalmente en representación del jefe inmediato no disponible.
+                                                        @else
+                                                            Para aprobar esta solicitud, primero debe firmarla digitalmente con FIRMA PERÚ.
+                                                        @endif
+                                                    </p>
                                                 </div>
-                                                <button type="button" 
+                                                <button type="button"
                                                         class="btn-sign-level1 inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
                                                         data-permission-id="{{ $permission->id }}">
                                                     <i class="fas fa-pen mr-2"></i>
@@ -384,14 +400,53 @@
                                 } elseif ($permission->status === 'pending_hr') {
                                     $hasRequiredSignature = $permission->hasLevel2FirmaPeruSignature();
                                 }
+                                $isSpecialCase = ($permission->metadata['skip_immediate_supervisor'] ?? false) && $permission->current_approval_level === 1;
                             @endphp
+
+                            {{-- Mensaje especial para casos sin jefe inmediato --}}
+                            @if($isSpecialCase)
+                                <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-r-lg shadow-sm">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center">
+                                                <svg class="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="ml-4 flex-1">
+                                            <h4 class="text-lg font-bold text-yellow-900 mb-2">
+                                                ⚠️ Aprobación Completa Requerida
+                                            </h4>
+                                            <div class="text-sm text-yellow-800 space-y-2">
+                                                <p class="font-medium">
+                                                    Esta solicitud requiere <strong>aprobación completa por RRHH</strong> porque el jefe inmediato
+                                                    <strong>{{ $permission->user->immediateSupervisor->name ?? 'N/A' }}</strong> no estaba disponible.
+                                                </p>
+                                                <div class="bg-yellow-100 border border-yellow-300 rounded-lg p-3 mt-3">
+                                                    <p class="font-semibold text-yellow-900 mb-2">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Al firmar y aprobar esta solicitud:
+                                                    </p>
+                                                    <ul class="list-disc list-inside space-y-1 text-yellow-800 ml-2">
+                                                        <li>Aprobará <strong>ambos niveles</strong> (Jefe Inmediato + RRHH) con una sola firma</li>
+                                                        <li>La solicitud pasará directamente a estado <strong>APROBADO</strong></li>
+                                                        <li>Se creará el registro de seguimiento automáticamente</li>
+                                                        <li>No se requerirá una segunda aprobación</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Formulario de Aprobación -->
                                 <div class="bg-green-50 p-6 rounded-lg border border-green-200">
                                     <h4 class="font-semibold text-green-800 mb-4">
                                         <i class="fas fa-check-circle mr-2"></i>
-                                        Aprobar Solicitud
+                                        {{ $isSpecialCase ? 'Aprobación Completa (Ambos Niveles)' : 'Aprobar Solicitud' }}
                                     </h4>
                                     
                                     @if(!$hasRequiredSignature)
@@ -413,12 +468,16 @@
                                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
                                                 placeholder="Comentarios adicionales..."></textarea>
                                         </div>
-                                        <button type="submit" 
+                                        <button type="submit"
                                                 class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white {{ $hasRequiredSignature ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 cursor-not-allowed' }} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                                 @if(!$hasRequiredSignature) disabled @endif
-                                                onclick="return confirm('¿Está seguro de aprobar esta solicitud?')">
+                                                onclick="return confirm('{{ $isSpecialCase ? '¿Está seguro de aprobar COMPLETAMENTE esta solicitud? Se aprobarán ambos niveles (Jefe Inmediato + RRHH) con esta acción.' : '¿Está seguro de aprobar esta solicitud?' }}')">
                                             <i class="fas fa-check mr-2"></i>
-                                            {{ $hasRequiredSignature ? 'Aprobar Solicitud' : 'Firme Digitalmente Primero' }}
+                                            @if($hasRequiredSignature)
+                                                {{ $isSpecialCase ? 'Aprobar Completamente y Firmar' : 'Aprobar Solicitud' }}
+                                            @else
+                                                Firme Digitalmente Primero
+                                            @endif
                                         </button>
                                     </form>
                                 </div>
