@@ -226,7 +226,7 @@
                     </div>
 
                     <!-- Botón de envío -->
-                    <div class="animate-slide-up" style="animation-delay: 0.4s">
+                    <div class="animate-slide-up space-y-3" style="animation-delay: 0.4s">
                         <button type="submit" 
                                 class="w-full bg-gradient-to-r from-municipal-blue to-municipal-light hover:from-municipal-light hover:to-municipal-blue text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-municipal-light/30 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl group relative overflow-hidden">
                             <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -235,6 +235,25 @@
                             </svg>
                             <span class="relative">Iniciar Sesión</span>
                         </button>
+                        
+                        <!-- Botón para abrir en Edge -->
+                         <p class="text-xs text-center text-municipal-gray">
+                            <svg class="w-3 h-3 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            Recomendado para firma digital abrir con Microsoft Edge
+                        </p>
+                        <button type="button" 
+                                onclick="openInEdge()"
+                                class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-indigo-500/30 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl group relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M21.17 2.06A13.1 13.1 0 0 0 19 2a13 13 0 0 0-6.5 2.17 13 13 0 0 0-4.74 6.1A13 13 0 0 0 10.52 22a13.1 13.1 0 0 0 9.65-4.5C23 14.4 24 10.8 24 8a13.4 13.4 0 0 0-2.83-5.94zM11.05 20a11 11 0 0 1-1.5-9.17 11 11 0 0 1 4-5.17A11 11 0 0 1 18.76 4h.24a11.3 11.3 0 0 1 1.93.19A11.5 11.5 0 0 1 22 8a11.5 11.5 0 0 1-3.48 8.5A11 11 0 0 1 11.05 20z"/>
+                            </svg>
+                            <span class="relative">Abrir con Microsoft Edge</span>
+                        </button>
+                        
+                        
                     </div>
                 </form>
 
@@ -254,6 +273,7 @@
                                 <h5 class="text-sm font-semibold text-emerald-800 mb-1">Sistema Seguro</h5>
                                 <p class="text-xs text-emerald-700 leading-relaxed">
                                     Acceso exclusivo para personal autorizado de la Municipalidad Distrital de San Jerónimo.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -287,6 +307,75 @@
     </div>
 
     <script>
+        // Función para abrir en Edge
+        function openInEdge() {
+        const url = window.location.href;
+
+        // Detectores
+        const ua = navigator.userAgent;
+        const isWindows = navigator.platform.startsWith("Win");
+        const isMobile = /Android|iPhone|iPad/i.test(ua);
+        const isEdge = /Edg\//i.test(ua);
+        const isChrome = /Chrome/i.test(ua) && !isEdge;
+
+        // Mensaje estilizado
+        function notify(message) {
+            alert(message);
+        }
+
+        // 1. Si ya está en Edge → simplemente recarga en Edge
+        if (isEdge) {
+            notify("Ya estás usando Microsoft Edge 😊");
+            return;
+        }
+
+        // 2. Si está en móvil → no es posible abrir Edge con protocolo
+        if (isMobile) {
+            notify("Para abrir esta página en Microsoft Edge, usa una computadora con Windows.");
+            return;
+        }
+
+        // 3. Si NO está en Windows → no hay Edge para abrir
+        if (!isWindows) {
+            notify("Solo se puede abrir en Microsoft Edge desde Windows.");
+            return;
+        }
+
+        // 4. Intentar abrir automáticamente el sitio en Edge usando protocolo nativo
+        const edgeUrl = "microsoft-edge:" + url;
+
+        // Crear iframe oculto para intentar la apertura silenciosa
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+
+        let opened = false;
+
+        try {
+            iframe.src = edgeUrl;
+            opened = true;
+
+            // Notificación rápida
+            setTimeout(() => {
+                notify("Abriendo en Microsoft Edge...");
+            }, 300);
+
+        } catch (e) {
+            opened = false;
+        }
+
+        // Si no pudo abrir → mensaje con instrucciones
+        setTimeout(() => {
+            if (!opened) {
+                notify(
+                    "No se pudo abrir automáticamente en Microsoft Edge.\n\n" +
+                    "Haz clic en Aceptar y te mostraré cómo abrirlo manualmente."
+                );
+                window.open("https://www.microsoft.com/edge", "_blank");
+            }
+        }, 1000);
+    }
+
         // Validación de DNI en tiempo real
         const dniInput = document.getElementById('dni');
         const dniIndicator = document.getElementById('dni-indicator');
