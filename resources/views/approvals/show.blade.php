@@ -525,23 +525,19 @@
                 <!-- Columna derecha - Visualizador de PDF -->
                 <div class="xl:col-span-1">
                     <div class="sticky top-4">
-                        <div class="bg-white shadow-sm rounded-xl border border-gray-200">
-                            <div class="px-4 py-3 border-b border-gray-200">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-lg font-medium text-gray-900">
-                                        <i class="fas fa-file-pdf text-red-600 mr-2"></i>
-                                        Vista Previa PDF
-                                        @if($permission->hasSignedDocument())
+                        @if($permission->hasSignedDocument())
+                            {{-- Solo mostrar visor si existe PDF generado --}}
+                            <div class="bg-white shadow-sm rounded-xl border border-gray-200">
+                                <div class="px-4 py-3 border-b border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-medium text-gray-900">
+                                            <i class="fas fa-file-pdf text-red-600 mr-2"></i>
+                                            Vista Previa PDF
                                             <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 <i class="fas fa-signature mr-1"></i>
                                                 Firmado
                                             </span>
-                                        @else
-                                            <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                                Original
-                                            </span>
-                                        @endif
-                                    </h3>
+                                        </h3>
                                     <div class="flex space-x-2">
                                         <button onclick="refreshPdfViewer()" 
                                                 class="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
@@ -611,12 +607,34 @@
                                 </div>
                             </div>
                         </div>
+                    @else
+                        {{-- Mensaje cuando aún no existe PDF generado --}}
+                        <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-8">
+                            <div class="text-center">
+                                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-4">
+                                    <i class="fas fa-file-pdf text-3xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">
+                                    PDF No Disponible
+                                </h3>
+                                <p class="text-sm text-gray-600 mb-4">
+                                    El documento PDF se generará después de que se complete la firma digital.
+                                </p>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                                    <p class="text-xs text-blue-800">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>Nota:</strong> Debe firmar digitalmente la solicitud para generar el PDF. Una vez firmado, el documento aparecerá aquí automáticamente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     @push('scripts')
     @vite('resources/js/firma-peru.js')
     <script>
@@ -633,8 +651,10 @@
         const pdfUrl = "{{ route('permissions.pdf', $permission) }}";
         
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar visualizador PDF
-            initializePdfViewer();
+            // Inicializar visualizador PDF solo si existe
+            if (document.getElementById('pdf-viewer')) {
+                initializePdfViewer();
+            }
             
             // Esperar a que jQuery esté disponible
             function initializeFirmaPeru() {
@@ -648,9 +668,13 @@
                     
                     // Configurar callback para actualizar PDF después de firma
                     window.firmaPeruIntegration.onSignatureComplete = function() {
-                        console.log('✅ Firma completada en aprobaciones - Actualizando vista PDF...');
-                        refreshPdfViewer();
-                        
+                        console.log('✅ Firma completada en aprobaciones - Actualizando vista...');
+
+                        // Si existe el visor, actualizarlo; si no, recargar la página
+                        if (document.getElementById('pdf-viewer')) {
+                            refreshPdfViewer();
+                        }
+
                         // Recargar la página después de un momento para actualizar estado de botones
                         setTimeout(() => {
                             location.reload();

@@ -339,16 +339,18 @@ class FirmaPeruService
             return $tokenResult;
         }
 
-        // Verificar que existe firma del empleado
-        if (!$this->hasValidEmployeeSignature($permission)) {
-            return [
-                'success' => false,
-                'message' => 'La solicitud debe estar firmada por el empleado primero'
-            ];
-        }
+        // Verificar si existe firma del empleado para determinar qué documento usar
+        $hasEmployeeSignature = $this->hasValidEmployeeSignature($permission);
 
         $paramToken = Str::random(32);
-        $documentUrl = url('/api/firma-peru/signed-document/' . $permission->id) . '?token=' . $paramToken;
+
+        // Si tiene firma del empleado, usar documento firmado; si no, usar documento base
+        if ($hasEmployeeSignature) {
+            $documentUrl = url('/api/firma-peru/signed-document/' . $permission->id) . '?token=' . $paramToken;
+        } else {
+            // Permiso enviado sin firma del empleado, usar documento base
+            $documentUrl = url('/api/firma-peru/document/' . $permission->id) . '?token=' . $paramToken;
+        }
         
         $currentUserId = auth()->id();
         $currentUser = auth()->user();
@@ -377,15 +379,25 @@ class FirmaPeruService
         cache()->put("firma_token_{$paramToken}", $tokenData, 1800);
         $this->storeActiveSignatureIndex($paramToken, $tokenData);
 
-        // Si es RRHH firmando en nivel 1 (caso especial), usar su posición de RRHH
-        // Si es Jefe Inmediato normal, usar su posición del centro
-        $signaturePositionType = $isHrSigningLevel1 ? 'level2_hr' : 'level1_supervisor';
+        // Determinar posición de firma y motivo
+        if ($isHrSigningLevel1) {
+            // Caso especial: RRHH firma en nivel 1 (jefe no disponible)
+            // RRHH siempre mantiene su posición a la derecha, independiente de si hay firma del empleado
+            $signaturePositionType = 'level2_hr';
+            $signatureReason = $hasEmployeeSignature
+                ? 'Aprobación de solicitud de permiso - RRHH (Nivel 1 - Jefe Inmediato No Disponible)'
+                : 'Aprobación de solicitud - RRHH (Nivel 1 - Sin firma del empleado)';
+        } elseif (!$hasEmployeeSignature) {
+            // Si no hay firma del empleado, el jefe firma en la posición del empleado (izquierda)
+            $signaturePositionType = 'level1_supervisor';
+            $signatureReason = 'Aprobación de solicitud - Jefe Inmediato (Sin firma del empleado)';
+        } else {
+            // Flujo normal: Jefe Inmediato firma en su posición (centro)
+            $signaturePositionType = 'level1_supervisor';
+            $signatureReason = 'Aprobación de solicitud de permiso - Jefe Inmediato';
+        }
+
         $signaturePosition = $this->getSignaturePosition($signaturePositionType);
-        
-        // Ajustar el motivo de firma según quién firma
-        $signatureReason = $isHrSigningLevel1 
-            ? 'Aprobación de solicitud de permiso - RRHH (Nivel 1 - Jefe Inmediato No Disponible)'
-            : 'Aprobación de solicitud de permiso - Jefe Inmediato';
         
         $params = [
             'signatureFormat' => 'PAdES',
@@ -931,8 +943,9 @@ class FirmaPeruService
      */
     protected function hasValidLevel1Signature(PermissionRequest $permission): bool
     {
-        return $this->hasValidEmployeeSignature($permission) &&
-               $permission->digitalSignatures()
+        // Solo necesita tener firma de nivel 1 (el jefe)
+        // La firma del empleado es opcional ahora
+        return $permission->digitalSignatures()
                    ->where('signature_type', 'level1_supervisor')
                    ->where('is_valid', true)
                    ->exists();

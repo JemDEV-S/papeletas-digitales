@@ -166,11 +166,37 @@ class PermissionRequestController extends Controller
 
         try {
             $this->permissionService->submitForApproval($permission);
-            
+
             return redirect()
                 ->route('permissions.show', $permission)
                 ->with('success', 'Solicitud enviada para aprobación exitosamente.');
-                
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al enviar la solicitud: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Submit a permission request for approval without digital signature
+     */
+    public function submitWithoutSignature(PermissionRequest $permission)
+    {
+        if ($permission->user_id !== Auth::id()) {
+            abort(403, 'No puede enviar esta solicitud.');
+        }
+
+        if ($permission->status !== PermissionRequest::STATUS_DRAFT) {
+            return back()->with('error', 'La solicitud no está en estado borrador.');
+        }
+
+        try {
+            // Enviar con el flag skipSignatureValidation = true
+            $this->permissionService->submitForApproval($permission, true);
+
+            return redirect()
+                ->route('permissions.show', $permission)
+                ->with('success', 'Solicitud enviada para aprobación exitosamente (sin firma digital).');
+
         } catch (\Exception $e) {
             return back()->with('error', 'Error al enviar la solicitud: ' . $e->getMessage());
         }

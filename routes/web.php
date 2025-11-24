@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/permissions/{permission}/pdf', [PermissionRequestController::class, 'generatePdf'])->name('permissions.pdf');
     Route::get('/permissions/{permission}/tracking-pdf', [PermissionRequestController::class, 'getTrackingPdf'])->name('permissions.tracking-pdf');
     Route::post('/permissions/{permission}/submit', [PermissionRequestController::class, 'submit'])->name('permissions.submit');
+    Route::post('/permissions/{permission}/submit-without-signature', [PermissionRequestController::class, 'submitWithoutSignature'])->name('permissions.submit-without-signature');
     Route::post('/permissions/{permission}/cancel', [PermissionRequestController::class, 'cancel'])->name('permissions.cancel');
     Route::post('/permissions/{permission}/documents', [PermissionRequestController::class, 'uploadDocument'])->name('permissions.documents.upload');
     Route::get('/permissions/{permission}/documents/{document}', [PermissionRequestController::class, 'viewDocument'])->name('permissions.documents.view');

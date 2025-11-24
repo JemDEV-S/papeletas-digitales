@@ -82,9 +82,9 @@ class PermissionService
     /**
      * Enviar solicitud para aprobación
      */
-    public function submitForApproval(PermissionRequest $permissionRequest): bool
+    public function submitForApproval(PermissionRequest $permissionRequest, bool $skipSignatureValidation = false): bool
     {
-        if (!$permissionRequest->canBeSubmitted()) {
+        if (!$skipSignatureValidation && !$permissionRequest->canBeSubmitted()) {
             return false;
         }
 

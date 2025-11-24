@@ -444,7 +444,7 @@
                             <div class="border rounded-lg p-4 {{ $permission->hasEmployeeFirmaPeruSignature() ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
                                 <div class="flex items-center mb-2">
                                     <i class="fas fa-user {{ $permission->hasEmployeeFirmaPeruSignature() ? 'text-green-600' : 'text-gray-400' }} mr-2"></i>
-                                    <h4 class="font-medium text-sm">Etapa 1: Empleado</h4>
+                                    <h4 class="font-medium text-sm">Etapa 1:</h4>
                                     @if($permission->hasEmployeeFirmaPeruSignature())
                                         <i class="fas fa-check-circle text-green-600 ml-auto"></i>
                                     @endif
@@ -463,7 +463,7 @@
                             <div class="border rounded-lg p-4 {{ $permission->hasLevel1FirmaPeruSignature() ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
                                 <div class="flex items-center mb-2">
                                     <i class="fas fa-user-tie {{ $permission->hasLevel1FirmaPeruSignature() ? 'text-green-600' : 'text-gray-400' }} mr-2"></i>
-                                    <h4 class="font-medium text-sm">Etapa 2: Jefe Inmediato</h4>
+                                    <h4 class="font-medium text-sm">Etapa 2:</h4>
                                     @if($permission->hasLevel1FirmaPeruSignature())
                                         <i class="fas fa-check-circle text-green-600 ml-auto"></i>
                                     @endif
@@ -484,7 +484,7 @@
                             <div class="border rounded-lg p-4 {{ $permission->hasLevel2FirmaPeruSignature() ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
                                 <div class="flex items-center mb-2">
                                     <i class="fas fa-building {{ $permission->hasLevel2FirmaPeruSignature() ? 'text-green-600' : 'text-gray-400' }} mr-2"></i>
-                                    <h4 class="font-medium text-sm">Etapa 3: RRHH</h4>
+                                    <h4 class="font-medium text-sm">Etapa 3:</h4>
                                     @if($permission->hasLevel2FirmaPeruSignature())
                                         <i class="fas fa-check-circle text-green-600 ml-auto"></i>
                                     @endif
@@ -711,7 +711,7 @@
                                     @if($permission->canBeSubmitted())
                                         <form action="{{ route('permissions.submit', $permission) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" 
+                                            <button type="submit"
                                                     class="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                                                     onclick="return confirm('¿Está seguro de enviar esta solicitud para aprobación?')">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -733,6 +733,20 @@
                                                 No se puede enviar la solicitud
                                             @endif
                                         </div>
+
+                                        @if(!$permission->hasEmployeeFirmaPeruSignature())
+                                            <form action="{{ route('permissions.submit-without-signature', $permission) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+                                                        onclick="return confirm('¿Está seguro de enviar esta solicitud SIN FIRMA DIGITAL para aprobación?\n\nNota: La solicitud se enviará sin su firma digital.')">
+                                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                                    </svg>
+                                                    Enviar sin Firma Digital
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endif
                                 @endif
 
