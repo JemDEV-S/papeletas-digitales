@@ -16,26 +16,30 @@ class PermissionTrackingController extends Controller
     {
         $user = Auth::user();
         
-        // Obtener permisos propios del usuario
+        // 1. Obtener permisos propios del usuario (Paginado)
+        // Usamos 'own_page' para que no interfiera con la otra tabla
         $ownTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
             ->whereHas('permissionRequest', function($q) use ($user) {
                 $q->where('user_id', $user->id);
             })
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10, ['*'], 'own_page');
 
-        // Obtener permisos del equipo según el rol
+        // 2. Obtener permisos del equipo según el rol (Paginado)
+        // Inicializamos como colección vacía por si no tiene rol
         $teamTrackings = collect();
         
         if ($user->hasRole('jefe_inmediato')) {
             // Si es jefe inmediato, ver los permisos de sus subordinados
             $subordinateIds = $user->subordinates()->pluck('id');
+            
             $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
                 ->whereHas('permissionRequest', function($q) use ($subordinateIds) {
                     $q->whereIn('user_id', $subordinateIds);
                 })
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->paginate(10, ['*'], 'team_page');
+
         } elseif ($user->hasRole(['jefe_rrhh', 'admin'])) {
             // Si es jefe de RRHH o admin, ver todos los permisos excepto los propios
             $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
@@ -43,7 +47,7 @@ class PermissionTrackingController extends Controller
                     $q->where('user_id', '!=', $user->id);
                 })
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->paginate(10, ['*'], 'team_page');
         }
 
         return view('tracking.index', compact('ownTrackings', 'teamTrackings'));
@@ -57,36 +61,36 @@ class PermissionTrackingController extends Controller
     }
 
     public function hrDashboard()
-{
-    // Verificar que llegue hasta aquí
-    \Log::info('=== hrDashboard iniciado ===');
-    
-    try {
-        $pendingDepartures = PermissionTracking::pendingDeparture()
-            ->with(['permissionRequest.user'])
-            ->get();
-        \Log::info('Pending departures obtenidas: ' . $pendingDepartures->count());
-
-        $currentlyOut = PermissionTracking::currentlyOut()
-            ->with(['permissionRequest.user'])
-            ->get();
-        \Log::info('Currently out obtenidas: ' . $currentlyOut->count());
-
-        $overdue = PermissionTracking::overdue()
-            ->with(['permissionRequest.user'])
-            ->get();
-        \Log::info('Overdue obtenidas: ' . $overdue->count());
-
-        \Log::info('Datos obtenidos correctamente, intentando cargar vista...');
+    {
+        // Verificar que llegue hasta aquí
+        \Log::info('=== hrDashboard iniciado ===');
         
-        // Intentar retornar la vista
-        return view('tracking.hr-dashboard', compact('pendingDepartures', 'currentlyOut', 'overdue'));
-        
-    } catch (\Exception $e) {
-        \Log::error('Error en hrDashboard: ' . $e->getMessage());
-        dd('Error: ' . $e->getMessage());
+        try {
+            $pendingDepartures = PermissionTracking::pendingDeparture()
+                ->with(['permissionRequest.user'])
+                ->get();
+            \Log::info('Pending departures obtenidas: ' . $pendingDepartures->count());
+
+            $currentlyOut = PermissionTracking::currentlyOut()
+                ->with(['permissionRequest.user'])
+                ->get();
+            \Log::info('Currently out obtenidas: ' . $currentlyOut->count());
+
+            $overdue = PermissionTracking::overdue()
+                ->with(['permissionRequest.user'])
+                ->get();
+            \Log::info('Overdue obtenidas: ' . $overdue->count());
+
+            \Log::info('Datos obtenidos correctamente, intentando cargar vista...');
+            
+            // Intentar retornar la vista
+            return view('tracking.hr-dashboard', compact('pendingDepartures', 'currentlyOut', 'overdue'));
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en hrDashboard: ' . $e->getMessage());
+            dd('Error: ' . $e->getMessage());
+        }
     }
-}
 
     public function scanDni(Request $request): JsonResponse
     {

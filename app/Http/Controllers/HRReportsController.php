@@ -664,6 +664,18 @@ class HRReportsController extends Controller
             $level1Approval = $request->getApprovalByLevel(1);
             $level2Approval = $request->getApprovalByLevel(2);
 
+            // --- LÓGICA DE FORMATO DE HORAS PARA EXCEL ---
+            $horasFormateadas = 'N/A';
+            
+            if ($request->tracking && $request->tracking->actual_hours_used) {
+                $decimal = $request->tracking->actual_hours_used;
+                $hours = floor($decimal);
+                $minutes = round(($decimal - $hours) * 60);
+                // Formato: 4h 05m
+                $horasFormateadas = "{$hours}h " . str_pad($minutes, 2, '0', STR_PAD_LEFT) . "m";
+            }
+            // ---------------------------------------------
+
             return [
                 'Número Solicitud' => $request->request_number,
                 'Empleado' => $request->user->full_name,
@@ -693,8 +705,9 @@ class HRReportsController extends Controller
                     $request->tracking->departure_datetime->format('d/m/Y H:i') : 'N/A',
                 'Fecha/Hora Regreso' => $request->tracking && $request->tracking->return_datetime ?
                     $request->tracking->return_datetime->format('d/m/Y H:i') : 'N/A',
-                'Horas Utilizadas' => $request->tracking && $request->tracking->actual_hours_used ?
-                    $request->tracking->actual_hours_used : 'N/A',
+                
+                // AQUÍ USAMOS LA VARIABLE FORMATEADA
+                'Horas Utilizadas' => $horasFormateadas, 
 
                 // Time metrics
                 'Tiempo Total Aprobación (horas)' => $this->calculateApprovalTime($request),
