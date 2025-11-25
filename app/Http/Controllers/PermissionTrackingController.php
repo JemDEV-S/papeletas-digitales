@@ -23,7 +23,7 @@ class PermissionTrackingController extends Controller
                 $q->where('user_id', $user->id);
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(10, ['*'], 'own_page');
+            ->paginate(20, ['*'], 'own_page');
 
         // 2. Obtener permisos del equipo según el rol (Paginado)
         // Inicializamos como colección vacía por si no tiene rol
@@ -38,7 +38,7 @@ class PermissionTrackingController extends Controller
                     $q->whereIn('user_id', $subordinateIds);
                 })
                 ->orderBy('created_at', 'desc')
-                ->paginate(10, ['*'], 'team_page');
+                ->paginate(20, ['*'], 'team_page');
 
         } elseif ($user->hasRole(['jefe_rrhh', 'admin'])) {
             // Si es jefe de RRHH o admin, ver todos los permisos excepto los propios
@@ -47,7 +47,7 @@ class PermissionTrackingController extends Controller
                     $q->where('user_id', '!=', $user->id);
                 })
                 ->orderBy('created_at', 'desc')
-                ->paginate(10, ['*'], 'team_page');
+                ->paginate(20, ['*'], 'team_page');
         }
 
         return view('tracking.index', compact('ownTrackings', 'teamTrackings'));
