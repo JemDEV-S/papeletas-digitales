@@ -282,17 +282,23 @@
                         <div class="bg-blue-50 rounded-lg p-4">
                             <h5 class="text-sm font-medium text-blue-900 mb-2">Tiempo Fuera</h5>
                             @if($tracking->departure_datetime && $tracking->return_datetime)
+                                @php
+                                    $hours = floor($tracking->actual_hours_used);
+                                    $minutes = round(($tracking->actual_hours_used - $hours) * 60);
+                                @endphp
                                 <p class="text-2xl font-bold text-blue-600">
-                                    {{ number_format($tracking->actual_hours_used, 2) }} hrs
+                                    {{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m
                                 </p>
                                 <p class="text-xs text-blue-700">Tiempo total utilizado</p>
                             @elseif($tracking->departure_datetime)
                                 @php
                                     $currentTime = now();
-                                    $timeDiff = $currentTime->diffInMinutes($tracking->departure_datetime) / 60;
+                                    $totalMinutes = $currentTime->diffInMinutes($tracking->departure_datetime);
+                                    $hours = floor($totalMinutes / 60);
+                                    $minutes = $totalMinutes % 60;
                                 @endphp
                                 <p class="text-2xl font-bold text-blue-600">
-                                    {{ number_format($timeDiff, 2) }} hrs
+                                    {{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m
                                 </p>
                                 <p class="text-xs text-blue-700">Tiempo transcurrido</p>
                             @else

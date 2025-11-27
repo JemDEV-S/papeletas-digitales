@@ -12,7 +12,7 @@
                     <a href="{{ route('tracking.hr-dashboard') }}" 
                        class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 transition ease-in-out duration-150">
                         <i class="fas fa-tachometer-alt mr-2"></i>
-                        Dashboard RRHH
+                        Dashboard RRHH  
                     </a>
                 </div>
             @endif
@@ -27,265 +27,217 @@
                         </h3>
                     </div>
 
-                <!-- Desktop Table View -->
+                <!-- Desktop Table View (Compacta) -->
                 <div class="hidden lg:block overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200 table-fixed">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
                                     Empleado
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Tipo de Permiso
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">
+                                    Permiso
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Estado
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha Salida
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Salida/Regreso
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Fecha Regreso
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Tiempo
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Horas Utilizadas
+                                <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Registro
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Registrado por
-                                </th>
-                                <th scope="col" class="relative px-6 py-3">
-                                    <span class="sr-only">Acciones</span>
+                                <th scope="col" class="relative px-3 py-3">
+                                    <span class="sr-only">Ver</span>
                                 </th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($ownTrackings as $tracking)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                <tr class="hover:bg-gray-50 text-sm">
+                                    <td class="px-3 py-3 whitespace-normal">
                                         <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                    <span class="text-sm font-medium text-gray-700">
+                                            <div class="flex-shrink-0 h-8 w-8">
+                                                <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                    <span class="text-xs font-medium text-gray-700">
                                                         {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900">
+                                            <div class="ml-3">
+                                                <div class="font-medium text-gray-900 truncate max-w-[120px]" title="{{ $tracking->permissionRequest->user->name }}">
                                                     {{ $tracking->permissionRequest->user->name }}
                                                 </div>
-                                                <div class="text-sm text-gray-500">
-                                                    DNI: {{ $tracking->employee_dni }}
+                                                <div class="text-xs text-gray-500">
+                                                    {{ $tracking->employee_dni }}
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900">
+                                    <td class="px-3 py-3 whitespace-normal">
+                                        <div class="text-gray-900 text-xs font-medium">
                                             {{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}
                                         </div>
-                                        <div class="text-sm text-gray-500">
+                                        <div class="text-xs text-gray-500">
                                             {{ $tracking->permissionRequest->code }}
                                         </div>
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    <td class="px-3 py-3 whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
                                                        bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
                                             {{ $tracking->getStatusLabel() }}
                                         </span>
                                         @if($tracking->isOverdue())
-                                            <div class="text-xs text-red-600 mt-1">
-                                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                RETRASADO
+                                            <div class="text-xs text-red-600 mt-1 font-bold">
+                                                <i class="fas fa-exclamation-triangle"></i> Retraso
                                             </div>
                                         @endif
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        @if($tracking->departure_datetime)
-                                            <div>{{ $tracking->departure_datetime->format('d/m/Y H:i') }}</div>
-                                        @else
-                                            <span class="text-gray-400">Pendiente</span>
-                                        @endif
+                                    <td class="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                                        <div class="flex flex-col">
+                                            <span class="text-green-700" title="Salida">
+                                                <i class="fas fa-arrow-right text-xs"></i> 
+                                                @if($tracking->departure_datetime)
+                                                    {{ $tracking->departure_datetime->format('d/m H:i') }}
+                                                @else -- @endif
+                                            </span>
+                                            <span class="text-blue-700 mt-1" title="Regreso">
+                                                <i class="fas fa-arrow-left text-xs"></i>
+                                                @if($tracking->return_datetime)
+                                                    {{ $tracking->return_datetime->format('d/m H:i') }}
+                                                @else -- @endif
+                                            </span>
+                                        </div>
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        @if($tracking->return_datetime)
-                                            <div>{{ $tracking->return_datetime->format('d/m/Y H:i') }}</div>
-                                        @else
-                                            <span class="text-gray-400">-</span>
-                                        @endif
-                                    </td>
-                                    
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-3 py-3 whitespace-nowrap text-xs">
                                         @if($tracking->actual_hours_used)
-                                            <div class="font-medium">{{ number_format($tracking->actual_hours_used, 2) }} horas</div>
-                                            @if($tracking->departure_datetime && $tracking->return_datetime)
-                                                <div class="text-xs text-gray-400">
-                                                    Tiempo real utilizado
-                                                </div>
-                                            @endif
+                                            @php
+                                                $hours = floor($tracking->actual_hours_used);
+                                                $minutes = round(($tracking->actual_hours_used - $hours) * 60);
+                                            @endphp
+                                            <div class="font-bold text-gray-900">
+                                                {{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m
+                                            </div>
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td class="px-3 py-3 whitespace-normal text-xs text-gray-500">
                                         @if($tracking->registeredByUser)
-                                            <div>{{ $tracking->registeredByUser->name }}</div>
-                                            <div class="text-xs text-gray-400">
-                                                {{ $tracking->updated_at->format('d/m/Y H:i') }}
+                                            <div class="truncate max-w-[100px]" title="{{ $tracking->registeredByUser->name }}">
+                                                {{ $tracking->registeredByUser->name }}
+                                            </div>
+                                            <div class="text-[10px] text-gray-400">
+                                                {{ $tracking->updated_at->format('d/m H:i') }}
                                             </div>
                                         @else
-                                            <span class="text-gray-400">Sistema</span>
+                                            Sistema
                                         @endif
                                     </td>
                                     
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="{{ route('tracking.show', $tracking) }}" 
                                            class="text-blue-600 hover:text-blue-900">
-                                            <i class="fas fa-eye mr-1"></i>
-                                            Ver
+                                            <i class="fas fa-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                        <div class="flex flex-col items-center justify-center py-8">
-                                            <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-                                            <p class="text-lg font-medium text-gray-400">No tienes seguimientos registrados</p>
-                                            <p class="text-sm text-gray-400">Tus seguimientos aparecerán aquí cuando tengas permisos activos</p>
-                                        </div>
+                                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                        No hay registros.
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                    <!-- Paginación Mis Permisos -->
+                    @if(method_exists($ownTrackings, 'links'))
+                        <div class="px-4 py-3 border-t border-gray-200">
+                            {{ $ownTrackings->appends(request()->query())->links() }}
+                        </div>
+                    @endif
                 </div>
 
-                <!-- Mobile/Tablet Card View -->
+                <!-- Mobile View (Actualizado Formato Hora) -->
                 <div class="lg:hidden">
                     @forelse($ownTrackings as $tracking)
-                        <div class="border-b border-gray-200 p-4 sm:p-6 hover:bg-gray-50">
-                            <!-- Header with Employee Info and Status -->
-                            <div class="flex items-start justify-between mb-4">
+                        <div class="border-b border-gray-200 p-4 hover:bg-gray-50">
+                            <!-- Cabecera Mobile -->
+                            <div class="flex items-start justify-between mb-2">
                                 <div class="flex items-center space-x-3">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                            <span class="text-sm font-medium text-gray-700">
-                                                {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
-                                            </span>
-                                        </div>
+                                    <div class="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs">
+                                        {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
                                     </div>
                                     <div>
-                                        <div class="text-sm font-medium text-gray-900">
+                                        <div class="text-sm font-bold text-gray-900">
                                             {{ $tracking->permissionRequest->user->name }}
                                         </div>
-                                        <div class="text-sm text-gray-500">
-                                            DNI: {{ $tracking->employee_dni }}
+                                        <div class="text-xs text-gray-500">
+                                            {{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end space-y-2">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                <div class="flex flex-col items-end">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold 
                                                    bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
                                         {{ $tracking->getStatusLabel() }}
                                     </span>
-                                    @if($tracking->isOverdue())
-                                        <div class="text-xs text-red-600">
-                                            <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            RETRASADO
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
 
-                            <!-- Permission Type -->
-                            <div class="mb-4">
-                                <div class="text-sm text-gray-900 font-medium">
-                                    {{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}
+                            <!-- Grid Detalles Mobile -->
+                            <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+                                <div class="bg-gray-50 p-2 rounded">
+                                    <span class="block text-xs text-gray-500">Salida</span>
+                                    <span class="font-medium">
+                                        {{ $tracking->departure_datetime ? $tracking->departure_datetime->format('d/m H:i') : '--' }}
+                                    </span>
                                 </div>
-                                <div class="text-sm text-gray-500">
-                                    {{ $tracking->permissionRequest->code }}
+                                <div class="bg-gray-50 p-2 rounded">
+                                    <span class="block text-xs text-gray-500">Regreso</span>
+                                    <span class="font-medium">
+                                        {{ $tracking->return_datetime ? $tracking->return_datetime->format('d/m H:i') : '--' }}
+                                    </span>
                                 </div>
-                            </div>
-
-                            <!-- Details Grid -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha Salida</dt>
-                                    <dd class="text-sm text-gray-900">
-                                        @if($tracking->departure_datetime)
-                                            {{ $tracking->departure_datetime->format('d/m/Y H:i') }}
-                                        @else
-                                            <span class="text-gray-400">Pendiente</span>
-                                        @endif
-                                    </dd>
-                                </div>
-                                
-                                <div>
-                                    <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha Regreso</dt>
-                                    <dd class="text-sm text-gray-900">
-                                        @if($tracking->return_datetime)
-                                            {{ $tracking->return_datetime->format('d/m/Y H:i') }}
-                                        @else
-                                            <span class="text-gray-400">-</span>
-                                        @endif
-                                    </dd>
-                                </div>
-                                
-                                <div>
-                                    <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Horas Utilizadas</dt>
-                                    <dd class="text-sm text-gray-900">
+                                <div class="col-span-2 bg-blue-50 p-2 rounded flex justify-between items-center">
+                                    <span class="text-xs text-blue-800 font-semibold">Tiempo Utilizado:</span>
+                                    <span class="font-bold text-blue-900">
                                         @if($tracking->actual_hours_used)
-                                            <div class="font-medium">{{ number_format($tracking->actual_hours_used, 2) }} horas</div>
-                                            @if($tracking->departure_datetime && $tracking->return_datetime)
-                                                <div class="text-xs text-gray-400">
-                                                    Tiempo real utilizado
-                                                </div>
-                                            @endif
+                                            @php
+                                                $hours = floor($tracking->actual_hours_used);
+                                                $minutes = round(($tracking->actual_hours_used - $hours) * 60);
+                                            @endphp
+                                            {{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m
                                         @else
-                                            <span class="text-gray-400">-</span>
+                                            --
                                         @endif
-                                    </dd>
-                                </div>
-                                
-                                <div>
-                                    <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Registrado por</dt>
-                                    <dd class="text-sm text-gray-900">
-                                        @if($tracking->registeredByUser)
-                                            <div>{{ $tracking->registeredByUser->name }}</div>
-                                            <div class="text-xs text-gray-400">
-                                                {{ $tracking->updated_at->format('d/m/Y H:i') }}
-                                            </div>
-                                        @else
-                                            <span class="text-gray-400">Sistema</span>
-                                        @endif
-                                    </dd>
+                                    </span>
                                 </div>
                             </div>
-
-                            <!-- Action Button -->
-                            <div class="flex justify-end">
-                                <a href="{{ route('tracking.show', $tracking) }}" 
-                                   class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    <i class="fas fa-eye mr-2"></i>
-                                    Ver Detalles
-                                </a>
+                            
+                            <div class="mt-3 text-right">
+                                <a href="{{ route('tracking.show', $tracking) }}" class="text-xs text-blue-600 font-semibold hover:underline">Ver detalles completos &rarr;</a>
                             </div>
                         </div>
                     @empty
-                        <div class="p-6 sm:p-12 text-center">
-                            <div class="flex flex-col items-center justify-center">
-                                <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-                                <p class="text-lg font-medium text-gray-400 mb-2">No tienes seguimientos registrados</p>
-                                <p class="text-sm text-gray-400">Tus seguimientos aparecerán aquí cuando tengas permisos activos</p>
-                            </div>
-                        </div>
+                        <div class="p-6 text-center text-gray-500">No hay registros</div>
                     @endforelse
+                    
+                    <!-- Paginación Mobile -->
+                    @if(method_exists($ownTrackings, 'links'))
+                        <div class="px-4 py-3">
+                            {{ $ownTrackings->appends(request()->query())->links() }}
+                        </div>
+                    @endif
                 </div>
 
                 </div>
@@ -305,265 +257,154 @@
                         </h3>
                     </div>
 
-                    <!-- Desktop Table View -->
+                    <!-- Desktop Table View (Compacta) -->
                     <div class="hidden lg:block overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200 table-fixed">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Empleado
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Tipo de Permiso
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Estado
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Fecha Salida
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Fecha Regreso
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Horas Utilizadas
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Registrado por
-                                    </th>
-                                    <th scope="col" class="relative px-6 py-3">
-                                        <span class="sr-only">Acciones</span>
-                                    </th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Empleado</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Permiso</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salida/Regreso</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tiempo</th>
+                                    <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registro</th>
+                                    <th class="px-3 py-3 relative"><span class="sr-only">Ver</span></th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($teamTrackings as $tracking)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-6 py-4 whitespace-nowrap">
+                                    <tr class="hover:bg-gray-50 text-sm">
+                                        <td class="px-3 py-3 whitespace-normal">
                                             <div class="flex items-center">
-                                                <div class="flex-shrink-0 h-10 w-10">
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-sm font-medium text-gray-700">
-                                                            {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
-                                                        </span>
+                                                <div class="flex-shrink-0 h-8 w-8">
+                                                    <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                                        <span class="text-xs font-medium text-gray-700">{{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}</span>
                                                     </div>
                                                 </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900">
+                                                <div class="ml-3">
+                                                    <div class="font-medium text-gray-900 truncate max-w-[120px]" title="{{ $tracking->permissionRequest->user->name }}">
                                                         {{ $tracking->permissionRequest->user->name }}
                                                     </div>
-                                                    <div class="text-sm text-gray-500">
-                                                        DNI: {{ $tracking->employee_dni }}
-                                                    </div>
+                                                    <div class="text-xs text-gray-500">{{ $tracking->employee_dni }}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">
-                                                {{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $tracking->permissionRequest->code }}
-                                            </div>
+                                        <td class="px-3 py-3 whitespace-normal">
+                                            <div class="text-gray-900 text-xs font-medium">{{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $tracking->permissionRequest->code }}</div>
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                           bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
+                                        <td class="px-3 py-3 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
                                                 {{ $tracking->getStatusLabel() }}
                                             </span>
                                             @if($tracking->isOverdue())
-                                                <div class="text-xs text-red-600 mt-1">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                    RETRASADO
-                                                </div>
+                                                <div class="text-xs text-red-600 mt-1 font-bold"><i class="fas fa-exclamation-triangle"></i> Retraso</div>
                                             @endif
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($tracking->departure_datetime)
-                                                <div>{{ $tracking->departure_datetime->format('d/m/Y H:i') }}</div>
-                                            @else
-                                                <span class="text-gray-400">Pendiente</span>
-                                            @endif
+                                        <td class="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                                            <div class="flex flex-col">
+                                                <span class="text-green-700"><i class="fas fa-arrow-right text-xs"></i> {{ $tracking->departure_datetime ? $tracking->departure_datetime->format('d/m H:i') : '--' }}</span>
+                                                <span class="text-blue-700 mt-1"><i class="fas fa-arrow-left text-xs"></i> {{ $tracking->return_datetime ? $tracking->return_datetime->format('d/m H:i') : '--' }}</span>
+                                            </div>
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($tracking->return_datetime)
-                                                <div>{{ $tracking->return_datetime->format('d/m/Y H:i') }}</div>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-3 py-3 whitespace-nowrap text-xs">
                                             @if($tracking->actual_hours_used)
-                                                <div class="font-medium">{{ number_format($tracking->actual_hours_used, 2) }} horas</div>
-                                                @if($tracking->departure_datetime && $tracking->return_datetime)
-                                                    <div class="text-xs text-gray-400">
-                                                        Tiempo real utilizado
-                                                    </div>
-                                                @endif
+                                                @php
+                                                    $hours = floor($tracking->actual_hours_used);
+                                                    $minutes = round(($tracking->actual_hours_used - $hours) * 60);
+                                                @endphp
+                                                <div class="font-bold text-gray-900">{{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m</div>
                                             @else
                                                 <span class="text-gray-400">-</span>
                                             @endif
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <td class="px-3 py-3 whitespace-normal text-xs text-gray-500">
                                             @if($tracking->registeredByUser)
-                                                <div>{{ $tracking->registeredByUser->name }}</div>
-                                                <div class="text-xs text-gray-400">
-                                                    {{ $tracking->updated_at->format('d/m/Y H:i') }}
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400">Sistema</span>
-                                            @endif
+                                                <div class="truncate max-w-[100px]">{{ $tracking->registeredByUser->name }}</div>
+                                                <div class="text-[10px] text-gray-400">{{ $tracking->updated_at->format('d/m H:i') }}</div>
+                                            @else Sistema @endif
                                         </td>
                                         
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ route('tracking.show', $tracking) }}" 
-                                               class="text-blue-600 hover:text-blue-900">
-                                                <i class="fas fa-eye mr-1"></i>
-                                                Ver
-                                            </a>
+                                        <td class="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="{{ route('tracking.show', $tracking) }}" class="text-blue-600 hover:text-blue-900"><i class="fas fa-eye"></i></a>
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                            <div class="flex flex-col items-center justify-center py-8">
-                                                <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-                                                <p class="text-lg font-medium text-gray-400">No hay seguimientos del equipo</p>
-                                                <p class="text-sm text-gray-400">Los seguimientos del equipo aparecerán aquí</p>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No hay seguimientos.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
+                        
+                        <!-- Paginación Equipo -->
+                        @if(method_exists($teamTrackings, 'links'))
+                            <div class="px-4 py-3 border-t border-gray-200">
+                                {{ $teamTrackings->appends(request()->query())->links() }}
+                            </div>
+                        @endif
                     </div>
 
-                    <!-- Mobile/Tablet Card View -->
+                    <!-- Mobile/Tablet Card View (Equipo) -->
                     <div class="lg:hidden">
                         @forelse($teamTrackings as $tracking)
-                            <div class="border-b border-gray-200 p-4 sm:p-6 hover:bg-gray-50">
-                                <!-- Header with Employee Info and Status -->
-                                <div class="flex items-start justify-between mb-4">
+                            <div class="border-b border-gray-200 p-4 hover:bg-gray-50">
+                                <div class="flex items-start justify-between mb-2">
                                     <div class="flex items-center space-x-3">
-                                        <div class="flex-shrink-0 h-10 w-10">
-                                            <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                <span class="text-sm font-medium text-gray-700">
-                                                    {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
-                                                </span>
-                                            </div>
+                                        <div class="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold text-xs">
+                                            {{ strtoupper(substr($tracking->permissionRequest->user->name, 0, 2)) }}
                                         </div>
                                         <div>
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $tracking->permissionRequest->user->name }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                DNI: {{ $tracking->employee_dni }}
-                                            </div>
+                                            <div class="text-sm font-bold text-gray-900">{{ $tracking->permissionRequest->user->name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}</div>
                                         </div>
                                     </div>
-                                    <div class="flex flex-col items-end space-y-2">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                       bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
+                                    <div class="flex flex-col items-end">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-{{ $tracking->getStatusColor() }}-100 text-{{ $tracking->getStatusColor() }}-800">
                                             {{ $tracking->getStatusLabel() }}
                                         </span>
-                                        @if($tracking->isOverdue())
-                                            <div class="text-xs text-red-600">
-                                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                                RETRASADO
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
 
-                                <!-- Permission Type -->
-                                <div class="mb-4">
-                                    <div class="text-sm text-gray-900 font-medium">
-                                        {{ $tracking->permissionRequest->permissionType->name ?? 'N/A' }}
+                                <div class="grid grid-cols-2 gap-2 text-sm mt-3">
+                                    <div class="bg-gray-50 p-2 rounded">
+                                        <span class="block text-xs text-gray-500">Salida</span>
+                                        <span class="font-medium">{{ $tracking->departure_datetime ? $tracking->departure_datetime->format('d/m H:i') : '--' }}</span>
                                     </div>
-                                    <div class="text-sm text-gray-500">
-                                        {{ $tracking->permissionRequest->code }}
+                                    <div class="bg-gray-50 p-2 rounded">
+                                        <span class="block text-xs text-gray-500">Regreso</span>
+                                        <span class="font-medium">{{ $tracking->return_datetime ? $tracking->return_datetime->format('d/m H:i') : '--' }}</span>
                                     </div>
-                                </div>
-
-                                <!-- Details Grid -->
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                    <div>
-                                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha Salida</dt>
-                                        <dd class="text-sm text-gray-900">
-                                            @if($tracking->departure_datetime)
-                                                {{ $tracking->departure_datetime->format('d/m/Y H:i') }}
-                                            @else
-                                                <span class="text-gray-400">Pendiente</span>
-                                            @endif
-                                        </dd>
-                                    </div>
-                                    
-                                    <div>
-                                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Fecha Regreso</dt>
-                                        <dd class="text-sm text-gray-900">
-                                            @if($tracking->return_datetime)
-                                                {{ $tracking->return_datetime->format('d/m/Y H:i') }}
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </dd>
-                                    </div>
-                                    
-                                    <div>
-                                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Horas Utilizadas</dt>
-                                        <dd class="text-sm text-gray-900">
+                                    <div class="col-span-2 bg-blue-50 p-2 rounded flex justify-between items-center">
+                                        <span class="text-xs text-blue-800 font-semibold">Tiempo Utilizado:</span>
+                                        <span class="font-bold text-blue-900">
                                             @if($tracking->actual_hours_used)
-                                                <div class="font-medium">{{ number_format($tracking->actual_hours_used, 2) }} horas</div>
-                                                @if($tracking->departure_datetime && $tracking->return_datetime)
-                                                    <div class="text-xs text-gray-400">
-                                                        Tiempo real utilizado
-                                                    </div>
-                                                @endif
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </dd>
-                                    </div>
-                                    
-                                    <div>
-                                        <dt class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Registrado por</dt>
-                                        <dd class="text-sm text-gray-900">
-                                            @if($tracking->registeredByUser)
-                                                <div>{{ $tracking->registeredByUser->name }}</div>
-                                                <div class="text-xs text-gray-400">
-                                                    {{ $tracking->updated_at->format('d/m/Y H:i') }}
-                                                </div>
-                                            @else
-                                                <span class="text-gray-400">Sistema</span>
-                                            @endif
-                                        </dd>
+                                                @php
+                                                    $hours = floor($tracking->actual_hours_used);
+                                                    $minutes = round(($tracking->actual_hours_used - $hours) * 60);
+                                                @endphp
+                                                {{ $hours }}h {{ str_pad($minutes, 2, '0', STR_PAD_LEFT) }}m
+                                            @else -- @endif
+                                        </span>
                                     </div>
                                 </div>
-
-                                <!-- Action Button -->
-                                <div class="flex justify-end">
-                                    <a href="{{ route('tracking.show', $tracking) }}" 
-                                       class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                        <i class="fas fa-eye mr-2"></i>
-                                        Ver Detalles
-                                    </a>
+                                <div class="mt-3 text-right">
+                                    <a href="{{ route('tracking.show', $tracking) }}" class="text-xs text-blue-600 font-semibold hover:underline">Ver detalles &rarr;</a>
                                 </div>
                             </div>
                         @empty
-                            <div class="p-6 sm:p-12 text-center">
-                                <div class="flex flex-col items-center justify-center">
-                                    <i class="fas fa-inbox text-4xl text-gray-300 mb-4"></i>
-                                    <p class="text-lg font-medium text-gray-400 mb-2">No hay seguimientos del equipo</p>
-                                    <p class="text-sm text-gray-400">Los seguimientos del equipo aparecerán aquí</p>
-                                </div>
-                            </div>
+                            <div class="p-6 text-center text-gray-500">No hay registros</div>
                         @endforelse
+
+                        <!-- Paginación Mobile Equipo -->
+                        @if(method_exists($teamTrackings, 'links'))
+                            <div class="px-4 py-3">
+                                {{ $teamTrackings->appends(request()->query())->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -571,7 +412,8 @@
             <!-- Statistics Cards -->
             @if(auth()->user()->hasRole('jefe_rrhh'))
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <!-- Cards (Igual que antes) -->
+                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-4 sm:p-6">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0">
@@ -585,79 +427,14 @@
                                             Total Seguimientos
                                         </dt>
                                         <dd class="text-lg font-medium text-gray-900">
-                                            {{ $ownTrackings->count() + $teamTrackings->count() }}
+                                            {{ $ownTrackings->total() + $teamTrackings->total() }}
                                         </dd>
                                     </dl>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-4 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="flex items-center justify-center h-8 w-8 rounded-md bg-green-500 text-white">
-                                        <i class="fas fa-check text-sm"></i>
-                                    </div>
-                                </div>
-                                <div class="ml-4 sm:ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">
-                                            Completados
-                                        </dt>
-                                        <dd class="text-lg font-medium text-gray-900">
-                                            {{ $ownTrackings->where('tracking_status', 'returned')->count() + $teamTrackings->where('tracking_status', 'returned')->count() }}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-4 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="flex items-center justify-center h-8 w-8 rounded-md bg-yellow-500 text-white">
-                                        <i class="fas fa-sign-out-alt text-sm"></i>
-                                    </div>
-                                </div>
-                                <div class="ml-4 sm:ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">
-                                            Actualmente Fuera
-                                        </dt>
-                                        <dd class="text-lg font-medium text-gray-900">
-                                            {{ $ownTrackings->whereIn('tracking_status', ['out', 'overdue'])->count() + $teamTrackings->whereIn('tracking_status', ['out', 'overdue'])->count() }}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div class="p-4 sm:p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="flex items-center justify-center h-8 w-8 rounded-md bg-red-500 text-white">
-                                        <i class="fas fa-exclamation-triangle text-sm"></i>
-                                    </div>
-                                </div>
-                                <div class="ml-4 sm:ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-gray-500 truncate">
-                                            Con Retraso
-                                        </dt>
-                                        <dd class="text-lg font-medium text-gray-900">
-                                            {{ $ownTrackings->where('tracking_status', 'overdue')->count() + $teamTrackings->where('tracking_status', 'overdue')->count() }}
-                                        </dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Agrega aquí el resto de las tarjetas si las necesitas, usando count() o total() si es paginado -->
                 </div>
             @endif
         </div>
