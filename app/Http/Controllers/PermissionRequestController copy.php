@@ -218,7 +218,7 @@ class PermissionRequestController extends Controller
         }
 
         $request->validate([
-            'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'document_type' => 'required|string',
         ]);
 
