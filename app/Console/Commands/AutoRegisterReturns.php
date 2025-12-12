@@ -86,7 +86,7 @@ class AutoRegisterReturns extends Command
                 $registered++;
             } else {
                 // Registrar el regreso automáticamente
-                $returnTime = now()->setTime(17, 0, 0); // 5:00 PM
+                $returnTime = now()->setTime(18, 0, 0); // 5:00 PM
 
                 $tracking->return_datetime = $returnTime;
                 $tracking->tracking_status = PermissionTracking::STATUS_RETURNED;
