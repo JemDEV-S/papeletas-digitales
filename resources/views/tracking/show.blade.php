@@ -347,19 +347,35 @@
                     @endif
 
                     <!-- Actions for HR -->
-                    @if(auth()->user()->hasRole('jefe_rrhh') && in_array($tracking->tracking_status, ['pending', 'out']))
-                        <div class="mt-8 flex space-x-4">
+                    @if(auth()->user()->hasRole('jefe_rrhh'))
+                        <div class="mt-8 flex flex-wrap gap-4">
                             @if($tracking->tracking_status === 'pending')
-                                <button onclick="registerDeparture({{ $tracking->id }})"
+                                <button onclick="openRegisterDepartureModal()"
                                         class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 transition ease-in-out duration-150">
                                     <i class="fas fa-sign-out-alt mr-2"></i>
                                     Registrar Salida
                                 </button>
-                            @elseif($tracking->tracking_status === 'out')
-                                <button onclick="registerReturn({{ $tracking->id }})"
+                            @elseif(in_array($tracking->tracking_status, ['out', 'overdue']))
+                                <button onclick="openRegisterReturnModal()"
                                         class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 transition ease-in-out duration-150">
                                     <i class="fas fa-sign-in-alt mr-2"></i>
                                     Registrar Regreso
+                                </button>
+                            @endif
+
+                            @if($tracking->departure_datetime)
+                                <button onclick="openEditDepartureModal()"
+                                        class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700 active:bg-yellow-900 focus:outline-none focus:border-yellow-900 focus:ring ring-yellow-300 transition ease-in-out duration-150">
+                                    <i class="fas fa-edit mr-2"></i>
+                                    Editar Salida
+                                </button>
+                            @endif
+
+                            @if($tracking->return_datetime)
+                                <button onclick="openEditReturnModal()"
+                                        class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 active:bg-purple-900 focus:outline-none focus:border-purple-900 focus:ring ring-purple-300 transition ease-in-out duration-150">
+                                    <i class="fas fa-edit mr-2"></i>
+                                    Editar Regreso
                                 </button>
                             @endif
                         </div>
@@ -395,19 +411,247 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     @if(auth()->user()->hasRole('jefe_rrhh'))
+        <!-- Modal para Registrar Salida -->
+        <div id="registerDepartureModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('registerDepartureModal')"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-sign-out-alt text-blue-600 mr-2"></i>
+                            Registrar Salida
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Salida</label>
+                                <input type="datetime-local" id="departure_datetime"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       max="{{ now()->format('Y-m-d\TH:i') }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observaciones (opcional)</label>
+                                <textarea id="departure_notes" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                          placeholder="Ingrese observaciones si es necesario"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" onclick="submitRegisterDeparture()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Registrar
+                        </button>
+                        <button type="button" onclick="closeModal('registerDepartureModal')"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Registrar Regreso -->
+        <div id="registerReturnModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('registerReturnModal')"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-sign-in-alt text-green-600 mr-2"></i>
+                            Registrar Regreso
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Regreso</label>
+                                <input type="datetime-local" id="return_datetime"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                       max="{{ now()->format('Y-m-d\TH:i') }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observaciones (opcional)</label>
+                                <textarea id="return_notes" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                          placeholder="Ingrese observaciones si es necesario"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" onclick="submitRegisterReturn()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Registrar
+                        </button>
+                        <button type="button" onclick="closeModal('registerReturnModal')"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Editar Salida -->
+        <div id="editDepartureModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('editDepartureModal')"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-edit text-yellow-600 mr-2"></i>
+                            Editar Salida
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Salida</label>
+                                <input type="datetime-local" id="edit_departure_datetime"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                       max="{{ now()->format('Y-m-d\TH:i') }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+                                <textarea id="edit_departure_notes" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                          placeholder="Ingrese observaciones"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" onclick="submitEditDeparture()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Actualizar
+                        </button>
+                        <button type="button" onclick="closeModal('editDepartureModal')"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Editar Regreso -->
+        <div id="editReturnModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeModal('editReturnModal')"></div>
+                <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                            <i class="fas fa-edit text-purple-600 mr-2"></i>
+                            Editar Regreso
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fecha y Hora de Regreso</label>
+                                <input type="datetime-local" id="edit_return_datetime"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                       max="{{ now()->format('Y-m-d\TH:i') }}">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+                                <textarea id="edit_return_notes" rows="3"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                          placeholder="Ingrese observaciones"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" onclick="submitEditReturn()"
+                                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Actualizar
+                        </button>
+                        <button type="button" onclick="closeModal('editReturnModal')"
+                                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <script>
-        function registerDeparture(trackingId) {
-            const notes = prompt('Observaciones (opcional):');
-            if (notes === null) return; // User cancelled
-            
+        const trackingId = {{ $tracking->id }};
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Función auxiliar para convertir fecha local a formato datetime-local
+        function toLocalDatetimeString(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            // Ajustar a zona horaria local
+            const offset = date.getTimezoneOffset() * 60000;
+            const localDate = new Date(date.getTime() - offset);
+            return localDate.toISOString().slice(0, 16);
+        }
+
+        // Función auxiliar para convertir datetime-local a formato ISO
+        // Función auxiliar para convertir datetime-local a formato Laravel
+        function toISOString(datetimeLocal) {
+            if (!datetimeLocal) return '';
+            // Reemplazar la T con espacio para que coincida con el formato Y-m-d H:i:s
+            return datetimeLocal.replace('T', ' ') + ':00';
+        }
+
+        // Funciones para abrir modales
+        function openRegisterDepartureModal() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const localNow = new Date(now.getTime() - offset);
+            document.getElementById('departure_datetime').value = localNow.toISOString().slice(0, 16);
+            document.getElementById('departure_notes').value = '';
+            document.getElementById('registerDepartureModal').classList.remove('hidden');
+        }
+
+        function openRegisterReturnModal() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset() * 60000;
+            const localNow = new Date(now.getTime() - offset);
+            document.getElementById('return_datetime').value = localNow.toISOString().slice(0, 16);
+            document.getElementById('return_notes').value = '';
+            document.getElementById('registerReturnModal').classList.remove('hidden');
+        }
+
+        function openEditDepartureModal() {
+            @if($tracking->departure_datetime)
+                // Usar el formato Y-m-d\TH:i que ya está en hora peruana
+                document.getElementById('edit_departure_datetime').value = '{{ $tracking->departure_datetime->format('Y-m-d\TH:i') }}';
+                document.getElementById('edit_departure_notes').value = '{{ addslashes($tracking->notes ?? '') }}';
+            @endif
+            document.getElementById('editDepartureModal').classList.remove('hidden');
+        }
+
+        function openEditReturnModal() {
+            @if($tracking->return_datetime)
+                // Usar el formato Y-m-d\TH:i que ya está en hora peruana
+                document.getElementById('edit_return_datetime').value = '{{ $tracking->return_datetime->format('Y-m-d\TH:i') }}';
+                document.getElementById('edit_return_notes').value = '{{ addslashes($tracking->notes ?? '') }}';
+            @endif
+            document.getElementById('editReturnModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Funciones para registrar
+        function submitRegisterDeparture() {
+            const datetime = document.getElementById('departure_datetime').value;
+            const notes = document.getElementById('departure_notes').value;
+
+            if (!datetime) {
+                alert('Por favor seleccione una fecha y hora');
+                return;
+            }
+
+            // Convertir a formato ISO con segundos
+            const isoDatetime = toISOString(datetime);
+
             fetch('{{ route("tracking.api.register-departure") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': csrfToken
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     tracking_id: trackingId,
+                    departure_datetime: isoDatetime,
                     notes: notes || null
                 })
             })
@@ -425,19 +669,28 @@
                 alert('Error al registrar la salida');
             });
         }
-        
-        function registerReturn(trackingId) {
-            const notes = prompt('Observaciones (opcional):');
-            if (notes === null) return; // User cancelled
-            
+
+        function submitRegisterReturn() {
+            const datetime = document.getElementById('return_datetime').value;
+            const notes = document.getElementById('return_notes').value;
+
+            if (!datetime) {
+                alert('Por favor seleccione una fecha y hora');
+                return;
+            }
+
+            // Convertir a formato ISO con segundos
+            const isoDatetime = toISOString(datetime);
+
             fetch('{{ route("tracking.api.register-return") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': csrfToken
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     tracking_id: trackingId,
+                    return_datetime: isoDatetime,
                     notes: notes || null
                 })
             })
@@ -453,6 +706,93 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('Error al registrar el regreso');
+            });
+        }
+
+        // Funciones para editar
+        function submitEditDeparture() {
+            const datetime = document.getElementById('edit_departure_datetime').value;
+            const notes = document.getElementById('edit_departure_notes').value;
+
+            if (!datetime) {
+                alert('Por favor seleccione una fecha y hora');
+                return;
+            }
+
+            if (!confirm('¿Está seguro de actualizar la fecha de salida?')) {
+                return;
+            }
+
+            // Convertir a formato ISO con segundos
+            const isoDatetime = toISOString(datetime);
+
+            fetch('{{ route("tracking.api.update-departure") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    tracking_id: trackingId,
+                    departure_datetime: isoDatetime,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar la salida');
+            });
+        }
+
+        function submitEditReturn() {
+            const datetime = document.getElementById('edit_return_datetime').value;
+            const notes = document.getElementById('edit_return_notes').value;
+
+            if (!datetime) {
+                alert('Por favor seleccione una fecha y hora');
+                return;
+            }
+
+            if (!confirm('¿Está seguro de actualizar la fecha de regreso?')) {
+                return;
+            }
+
+            // Convertir a formato ISO con segundos
+            const isoDatetime = toISOString(datetime);
+
+            fetch('{{ route("tracking.api.update-return") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    tracking_id: trackingId,
+                    return_datetime: isoDatetime,
+                    notes: notes
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar el regreso');
             });
         }
         </script>

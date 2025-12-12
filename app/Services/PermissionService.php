@@ -190,11 +190,26 @@ class PermissionService
             $skipImmediateSupervisor = $permissionRequest->metadata['skip_immediate_supervisor'] ?? false;
             $isSpecialCase = $skipImmediateSupervisor && $permissionRequest->current_approval_level === 1;
 
+            // Determinar el método de aprobación
+            $hasDigitalSignature = false;
+            if ($permissionRequest->current_approval_level === 1) {
+                $hasDigitalSignature = $permissionRequest->hasLevel1FirmaPeruSignature();
+            } elseif ($permissionRequest->current_approval_level === 2) {
+                $hasDigitalSignature = $permissionRequest->hasLevel2FirmaPeruSignature();
+            }
+
+            $approvalMethod = $hasDigitalSignature ? 'digital_signature' : 'manual_approval';
+
             // Actualizar la aprobación actual (nivel 1)
             $approval->update([
                 'status' => 'approved',
                 'comments' => $comments,
                 'approved_at' => now(),
+                'metadata' => array_merge($approval->metadata ?? [], [
+                    'approval_method' => $approvalMethod,
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
             ]);
 
             $nextApprover = null;
@@ -208,6 +223,13 @@ class PermissionService
                     'status' => 'approved',
                     'comments' => $comments,
                     'approved_at' => now(),
+                    'metadata' => [
+                        'approval_method' => $approvalMethod,
+                        'ip_address' => request()->ip(),
+                        'user_agent' => request()->userAgent(),
+                        'special_case' => true,
+                        'reason' => 'Jefe inmediato no disponible - Aprobación completa por RRHH'
+                    ]
                 ]);
 
                 // Marcar como aprobado final
@@ -312,6 +334,11 @@ class PermissionService
                 'status' => 'rejected',
                 'comments' => $comments,
                 'approved_at' => now(),
+                'metadata' => array_merge($approval->metadata ?? [], [
+                    'approval_method' => 'manual_rejection',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ])
             ]);
 
             $permissionRequest->status = PermissionRequest::STATUS_REJECTED;

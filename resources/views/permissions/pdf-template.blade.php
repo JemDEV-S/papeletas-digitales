@@ -360,17 +360,35 @@
         </div>
     </div>
 
-    <!-- Sección de Firmas Digitales -->
+    <!-- Sección de Firmas Digitales o Sellos de Aprobación -->
     <div class="signatures-section">
-        <div class="section-header" style="text-align: center; margin-bottom: 5px;">FIRMAS DIGITALES REQUERIDAS - FIRMA PERÚ</div>
-        
+        @php
+            $includeApprovalStamps = $include_approval_stamps ?? false;
+            $hasManualApprovals = isset($approvals) && $approvals->count() > 0;
+        @endphp
+
+        @if($includeApprovalStamps && $hasManualApprovals)
+            <div class="section-header" style="text-align: center; margin-bottom: 5px; background-color: #fef3c7; color: #92400e;">
+                APROBACIONES MANUALES (SIN FIRMA DIGITAL)
+            </div>
+        @else
+            <div class="section-header" style="text-align: center; margin-bottom: 5px;">FIRMAS DIGITALES REQUERIDAS - FIRMA PERÚ</div>
+        @endif
+
         <div class="signature-boxes">
             <div class="signature-row">
-                
+
                 <!-- Firma del Empleado -->
                 <div class="signature-cell">
                     <div class="signature-box">
                         <div class="signature-title">1. EMPLEADO SOLICITANTE</div>
+                        @if($includeApprovalStamps)
+                            <div style="font-size: 7px; color: #6b7280; margin-top: 2px; font-style: italic; text-align: center;">
+                                {{ $request->user->full_name }}<br>
+                                DNI: {{ $request->user->dni }}<br>
+                                Enviado: {{ $request->submitted_at ? $request->submitted_at->format('d/m/Y H:i') : 'N/A' }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -383,6 +401,24 @@
                                 * Aprobado por RRHH en representación<br>(Jefe no disponible)
                             </div>
                         @endif
+                        @if($includeApprovalStamps && $hasManualApprovals)
+                            @php
+                                $level1Approval = $approvals->where('approval_level', 1)->first();
+                            @endphp
+                            @if($level1Approval)
+                                <div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 3px; padding: 3px; margin-top: 2px;">
+                                    <div style="font-size: 7px; color: #065f46; text-align: center;">
+                                        ✓ APROBADO<br>
+                                        <strong>{{ $level1Approval->approver->full_name }}</strong><br>
+                                        DNI: {{ $level1Approval->approver->dni }}<br>
+                                        {{ $level1Approval->approved_at->format('d/m/Y H:i') }}<br>
+                                        @if(isset($level1Approval->metadata['approval_method']))
+                                            <em style="color: #92400e;">({{ $level1Approval->metadata['approval_method'] == 'manual_approval' ? 'Aprobación Manual' : 'Firma Digital' }})</em>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 </div>
 
@@ -390,6 +426,24 @@
                 <div class="signature-cell">
                     <div class="signature-box">
                         <div class="signature-title">3. RECURSOS HUMANOS</div>
+                        @if($includeApprovalStamps && $hasManualApprovals)
+                            @php
+                                $level2Approval = $approvals->where('approval_level', 2)->first();
+                            @endphp
+                            @if($level2Approval)
+                                <div style="background-color: #d1fae5; border: 1px solid #10b981; border-radius: 3px; padding: 3px; margin-top: 2px;">
+                                    <div style="font-size: 7px; color: #065f46; text-align: center;">
+                                        ✓ APROBADO<br>
+                                        <strong>{{ $level2Approval->approver->full_name }}</strong><br>
+                                        DNI: {{ $level2Approval->approver->dni }}<br>
+                                        {{ $level2Approval->approved_at->format('d/m/Y H:i') }}<br>
+                                        @if(isset($level2Approval->metadata['approval_method']))
+                                            <em style="color: #92400e;">({{ $level2Approval->metadata['approval_method'] == 'manual_approval' ? 'Aprobación Manual' : 'Firma Digital' }})</em>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
                     </div>
                 </div>
 
@@ -422,14 +476,24 @@
 
     <!-- Texto Legal y Hash -->
     <div class="legal-text">
-        <strong>IMPORTANTE:</strong> Este documento cuenta con firma digital certificada por FIRMA PERÚ, garantizando su autenticidad e integridad.
-        Las firmas digitales tienen plena validez legal según la Ley N° 27269.
+        @if($includeApprovalStamps && $hasManualApprovals)
+            <strong>IMPORTANTE:</strong> Este documento cuenta con aprobaciones manuales registradas en el sistema.
+            Las aprobaciones fueron realizadas por usuarios autorizados y quedan registradas en la base de datos con auditoría completa (IP, fecha/hora, usuario).
+            <br><em style="color: #92400e;">Nota: Generado sin firma digital debido a la indisponibilidad temporal del servicio FIRMA PERÚ.</em>
+        @else
+            <strong>IMPORTANTE:</strong> Este documento cuenta con firma digital certificada por FIRMA PERÚ, garantizando su autenticidad e integridad.
+            Las firmas digitales tienen plena validez legal según la Ley N° 27269.
+        @endif
     </div>
 
     <!-- Pie de página -->
     <div class="footer">
         Generado automáticamente por el Sistema de Papeletas Digitales - Municipalidad Distrital de San Jerónimo
-        <br>Este documento es válido sin firma física en virtud del uso de firma digital certificada.
+        @if($includeApprovalStamps && $hasManualApprovals)
+            <br>Este documento es válido con las aprobaciones manuales registradas en el sistema.
+        @else
+            <br>Este documento es válido sin firma física en virtud del uso de firma digital certificada.
+        @endif
     </div>
 </body>
 </html>

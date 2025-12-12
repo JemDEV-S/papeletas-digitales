@@ -65,13 +65,13 @@ class PermissionTracking extends Model
         );
     }
 
-    public function registerDeparture(User $registeredBy, ?string $notes = null): bool
+    public function registerDeparture(User $registeredBy, ?string $notes = null, ?string $customDatetime = null): bool
     {
         if ($this->tracking_status !== self::STATUS_PENDING) {
             return false;
         }
 
-        $this->departure_datetime = now();
+        $this->departure_datetime = $customDatetime ? Carbon::parse($customDatetime) : now();
         $this->tracking_status = self::STATUS_OUT;
         $this->registered_by_user_id = $registeredBy->id;
         if ($notes) {
@@ -81,19 +81,55 @@ class PermissionTracking extends Model
         return $this->save();
     }
 
-    public function registerReturn(User $registeredBy, ?string $notes = null): bool
+    public function registerReturn(User $registeredBy, ?string $notes = null, ?string $customDatetime = null): bool
     {
-        if ($this->tracking_status !== self::STATUS_OUT) {
+        if ($this->tracking_status !== self::STATUS_OUT && $this->tracking_status !== self::STATUS_OVERDUE) {
             return false;
         }
 
-        $this->return_datetime = now();
+        $this->return_datetime = $customDatetime ? Carbon::parse($customDatetime) : now();
         $this->tracking_status = self::STATUS_RETURNED;
         $this->registered_by_user_id = $registeredBy->id;
         $this->calculateActualHours();
-        
+
         if ($notes) {
             $this->notes = ($this->notes ? $this->notes . "\n" : '') . $notes;
+        }
+
+        return $this->save();
+    }
+
+    public function updateDeparture(?string $datetime = null, ?string $notes = null): bool
+    {
+        if (!$this->departure_datetime) {
+            return false;
+        }
+
+        if ($datetime) {
+            $this->departure_datetime = Carbon::parse($datetime);
+            $this->calculateActualHours();
+        }
+
+        if ($notes !== null) {
+            $this->notes = $notes;
+        }
+
+        return $this->save();
+    }
+
+    public function updateReturn(?string $datetime = null, ?string $notes = null): bool
+    {
+        if (!$this->return_datetime) {
+            return false;
+        }
+
+        if ($datetime) {
+            $this->return_datetime = Carbon::parse($datetime);
+            $this->calculateActualHours();
+        }
+
+        if ($notes !== null) {
+            $this->notes = $notes;
         }
 
         return $this->save();

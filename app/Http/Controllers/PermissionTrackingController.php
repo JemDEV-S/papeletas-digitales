@@ -155,6 +155,7 @@ class PermissionTrackingController extends Controller
         $validator = Validator::make($request->all(), [
             'tracking_id' => 'required|exists:permission_trackings,id',
             'notes' => 'nullable|string|max:500',
+            'departure_datetime' => 'nullable|date_format:Y-m-d H:i:s|before_or_equal:now',
         ]);
 
         if ($validator->fails()) {
@@ -166,8 +167,8 @@ class PermissionTrackingController extends Controller
         }
 
         $tracking = PermissionTracking::findOrFail($request->tracking_id);
-        
-        if ($tracking->registerDeparture(Auth::user(), $request->notes)) {
+
+        if ($tracking->registerDeparture(Auth::user(), $request->notes, $request->departure_datetime)) {
             // Update permission request status to in_progress
             $tracking->permissionRequest->update([
                 'status' => PermissionRequest::STATUS_IN_PROGRESS
@@ -194,6 +195,7 @@ class PermissionTrackingController extends Controller
         $validator = Validator::make($request->all(), [
             'tracking_id' => 'required|exists:permission_trackings,id',
             'notes' => 'nullable|string|max:500',
+            'return_datetime' => 'nullable|date_format:Y-m-d H:i:s|before_or_equal:now',
         ]);
 
         if ($validator->fails()) {
@@ -206,7 +208,7 @@ class PermissionTrackingController extends Controller
 
         $tracking = PermissionTracking::findOrFail($request->tracking_id);
 
-        if ($tracking->registerReturn(Auth::user(), $request->notes)) {
+        if ($tracking->registerReturn(Auth::user(), $request->notes, $request->return_datetime)) {
 
             // Update permission request status to completed
             $tracking->permissionRequest->update([
@@ -300,5 +302,106 @@ class PermissionTrackingController extends Controller
             'success' => true,
             'trackings' => $trackings
         ]);
+    }
+
+    public function updateDeparture(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'tracking_id' => 'required|exists:permission_trackings,id',
+            'departure_datetime' => 'required|date_format:Y-m-d H:i:s',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $tracking = PermissionTracking::findOrFail($request->tracking_id);
+
+        // Validar que la fecha de salida sea antes del regreso si existe
+        if ($tracking->return_datetime && $request->departure_datetime >= $tracking->return_datetime->format('Y-m-d H:i:s')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha de salida debe ser anterior a la fecha de regreso'
+            ], 422);
+        }
+
+        if ($tracking->updateDeparture($request->departure_datetime, $request->notes)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Salida actualizada correctamente',
+                'tracking' => [
+                    'departure_datetime' => $tracking->departure_datetime->format('Y-m-d H:i:s'),
+                    'actual_hours_used' => $tracking->actual_hours_used,
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo actualizar la salida'
+        ], 400);
+    }
+
+    public function updateReturn(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'tracking_id' => 'required|exists:permission_trackings,id',
+            'return_datetime' => 'required|date_format:Y-m-d H:i:s',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $tracking = PermissionTracking::findOrFail($request->tracking_id);
+
+        // Validar que la fecha de regreso sea después de la salida
+        if ($tracking->departure_datetime && $request->return_datetime <= $tracking->departure_datetime->format('Y-m-d H:i:s')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La fecha de regreso debe ser posterior a la fecha de salida'
+            ], 422);
+        }
+
+        if ($tracking->updateReturn($request->return_datetime, $request->notes)) {
+            // Regenerar PDF con los datos actualizados
+            try {
+                $pdfService = app(\App\Services\PdfGeneratorService::class);
+                $result = $pdfService->addTrackingOverlay($tracking->permissionRequest);
+
+                if ($result['success']) {
+                    \Log::info('PDF con tracking actualizado', [
+                        'permission_id' => $tracking->permissionRequest->id,
+                        'pdf_path' => $result['pdf_path']
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error al regenerar PDF con tracking: ' . $e->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Regreso actualizado correctamente',
+                'tracking' => [
+                    'return_datetime' => $tracking->return_datetime->format('Y-m-d H:i:s'),
+                    'actual_hours_used' => $tracking->actual_hours_used,
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No se pudo actualizar el regreso'
+        ], 400);
     }
 }

@@ -12,18 +12,20 @@ class PdfGeneratorService
     /**
      * Generar PDF de solicitud de permiso para firmar
      */
-    public function generatePermissionRequestPdf(PermissionRequest $permissionRequest)
+    public function generatePermissionRequestPdf(PermissionRequest $permissionRequest, bool $includeApprovalStamps = false)
     {
         try {
             // Cargar relaciones necesarias
-            $permissionRequest->load(['user.department', 'user.immediateSupervisor', 'permissionType', 'documents']);
-            
+            $permissionRequest->load(['user.department', 'user.immediateSupervisor', 'permissionType', 'documents', 'approvals.approver']);
+
             // Generar el PDF usando la vista
             $pdf = Pdf::loadView('permissions.pdf-template', [
                 'request' => $permissionRequest,
-                'for_signature' => true // Indica que es para firma
+                'for_signature' => true, // Indica que es para firma
+                'include_approval_stamps' => $includeApprovalStamps, // Incluir sellos visuales de aprobación
+                'approvals' => $permissionRequest->approvals->where('status', 'approved')
             ]);
-            
+
             // Configurar opciones del PDF
             $pdf->setPaper('A4', 'portrait');
             $pdf->setOptions([
@@ -31,19 +33,27 @@ class PdfGeneratorService
                 'isPhpEnabled' => true,
                 'isRemoteEnabled' => true
             ]);
-            
+
             return [
                 'success' => true,
                 'pdf' => $pdf,
                 'filename' => $this->generateFilename($permissionRequest)
             ];
-            
+
         } catch (\Exception $e) {
             return [
                 'success' => false,
                 'message' => 'Error al generar PDF: ' . $e->getMessage()
             ];
         }
+    }
+
+    /**
+     * Generar PDF con sellos visuales de aprobación (sin firma digital)
+     */
+    public function generatePdfWithApprovalStamps(PermissionRequest $permissionRequest)
+    {
+        return $this->generatePermissionRequestPdf($permissionRequest, true);
     }
     
     /**

@@ -92,6 +92,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/api/scan-dni', [PermissionTrackingController::class, 'scanDni'])->name('api.scan-dni');
         Route::post('/api/register-departure', [PermissionTrackingController::class, 'registerDeparture'])->name('api.register-departure');
         Route::post('/api/register-return', [PermissionTrackingController::class, 'registerReturn'])->name('api.register-return');
+        Route::post('/api/update-departure', [PermissionTrackingController::class, 'updateDeparture'])->name('api.update-departure');
+        Route::post('/api/update-return', [PermissionTrackingController::class, 'updateReturn'])->name('api.update-return');
         Route::post('/api/mark-overdue', [PermissionTrackingController::class, 'markOverdue'])->name('api.mark-overdue');
         
         // Vista general de seguimientos (todos los usuarios pueden ver)

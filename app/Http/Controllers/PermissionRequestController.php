@@ -376,13 +376,24 @@ class PermissionRequestController extends Controller
                 return $this->getSignedPdf($permission, $signedDocument);
             }
 
-            // Prioridad 2: Generar el PDF original
+            // Prioridad 2: Generar el PDF original o con sellos de aprobación
             if (!app()->bound('App\Services\PdfGeneratorService')) {
                 abort(503, 'El servicio de generación de PDF no está disponible.');
             }
 
             $pdfService = app('App\Services\PdfGeneratorService');
-            $result = $pdfService->generatePermissionRequestPdf($permission);
+
+            // Verificar si el permiso tiene aprobaciones manuales (sin firma digital)
+            $hasManualApprovals = $permission->approvals()
+                ->where('status', 'approved')
+                ->whereNotNull('metadata->approval_method')
+                ->where('metadata->approval_method', 'manual_approval')
+                ->exists();
+
+            // Si tiene aprobaciones manuales y está aprobado, generar PDF con sellos
+            $includeApprovalStamps = $hasManualApprovals && $permission->status === 'approved';
+
+            $result = $pdfService->generatePermissionRequestPdf($permission, $includeApprovalStamps);
 
             if (!$result['success']) {
                 abort(500, 'Error al generar el PDF: ' . ($result['message'] ?? 'Error desconocido'));

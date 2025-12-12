@@ -43,6 +43,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Firma Digital Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These values control the digital signature functionality using FIRMA PERÚ.
+    | When firma_peru_enabled is false or allow_approval_without_signature is true,
+    | the system will allow manual approvals without digital signatures.
+    |
+    */
+
+    'firma_peru_enabled' => env('FIRMA_PERU_ENABLED', true),
+    'allow_approval_without_signature' => env('ALLOW_APPROVAL_WITHOUT_SIGNATURE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
