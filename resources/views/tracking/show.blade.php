@@ -610,22 +610,19 @@
 
         function openEditDepartureModal() {
             @if($tracking->departure_datetime)
-                // Usar el formato Y-m-d\TH:i que ya está en hora peruana
                 document.getElementById('edit_departure_datetime').value = '{{ $tracking->departure_datetime->format('Y-m-d\TH:i') }}';
-                document.getElementById('edit_departure_notes').value = '{{ addslashes($tracking->notes ?? '') }}';
+                document.getElementById('edit_departure_notes').value = @json($tracking->notes ?? '');
             @endif
             document.getElementById('editDepartureModal').classList.remove('hidden');
         }
 
         function openEditReturnModal() {
             @if($tracking->return_datetime)
-                // Usar el formato Y-m-d\TH:i que ya está en hora peruana
                 document.getElementById('edit_return_datetime').value = '{{ $tracking->return_datetime->format('Y-m-d\TH:i') }}';
-                document.getElementById('edit_return_notes').value = '{{ addslashes($tracking->notes ?? '') }}';
+                document.getElementById('edit_return_notes').value = @json($tracking->notes ?? '');
             @endif
             document.getElementById('editReturnModal').classList.remove('hidden');
         }
-
         function closeModal(modalId) {
             document.getElementById(modalId).classList.add('hidden');
         }
