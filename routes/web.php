@@ -197,6 +197,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // === REPORTES AVANZADOS PARA JEFE DE RRHH ===
     Route::middleware(['role:jefe_rrhh,admin'])->prefix('hr')->name('hr.')->group(function () {
 
+        // === CREAR PERMISOS DIRECTOS (APROBADOS CON TRACKING) ===
+        Route::get('/permissions/create', [App\Http\Controllers\HRPermissionController::class, 'create'])->name('permissions.create');
+        Route::post('/permissions', [App\Http\Controllers\HRPermissionController::class, 'store'])->name('permissions.store');
+        Route::get('/permissions/user-info/{user}', [App\Http\Controllers\HRPermissionController::class, 'getUserInfo'])->name('permissions.user-info');
+
         // Dashboard principal de reportes
         Route::get('/reports', [HRReportsController::class, 'dashboard'])->name('reports.dashboard');
 

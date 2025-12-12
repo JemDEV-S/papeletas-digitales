@@ -193,6 +193,12 @@
                             </a>
                         @endif
 
+                        <!-- Crear Permiso Directo -->
+                        <a href="{{ route('hr.permissions.create') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('hr.permissions.*') ? 'bg-gray-700 text-white' : '' }}">
+                            <i class="fas fa-user-check mr-3 text-gray-400 group-hover:text-white"></i>
+                            Crear Permiso Aprobado
+                        </a>
+
                         <!-- Reportes RRHH -->
                         <a href="{{ route('hr.reports.dashboard') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('hr.reports.*') || request()->routeIs('reports.*') ? 'bg-gray-700 text-white' : '' }}">
                             <i class="fas fa-chart-bar mr-3 text-gray-400 group-hover:text-white"></i>
