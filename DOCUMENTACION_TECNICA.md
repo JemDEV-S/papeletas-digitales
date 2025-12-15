@@ -42,7 +42,7 @@ El sistema de notificaciones maneja múltiples tipos de eventos mediante el mode
 
 ## Comandos Artisan
 
-El sistema incluye varios comandos Artisan personalizados para tareas administrativas. El comando agent:token gestiona tokens de autenticación para agentes ZKTeco permitiendo crear, listar, revocar y limpiar tokens expirados. El comando tracking:auto-register-returns ejecuta el registro automático de retornos a las 17:00 horas para empleados que no registraron su regreso, marcando automáticamente como "regreso registrado por el sistema". El comando import:excel-data permite importar datos masivos de empleados desde archivos Excel. Todos los comandos incluyen opciones de dry-run para simulación sin cambios reales y logging detallado de operaciones realizadas.
+El sistema incluye varios comandos Artisan personalizados para tareas administrativas. El comando agent:token gestiona tokens de autenticación para agentes ZKTeco permitiendo crear, listar, revocar y limpiar tokens expirados. El comando tracking:auto-register-returns ejecuta el registro automático de retornos a las 18:00 horas para empleados que no registraron su regreso, marcando automáticamente como "regreso registrado por el sistema". El comando import:excel-data permite importar datos masivos de empleados desde archivos Excel. Todos los comandos incluyen opciones de dry-run para simulación sin cambios reales y logging detallado de operaciones realizadas.
 
 ## Despliegue y Configuración
 

@@ -2,15 +2,15 @@
 
 ## Descripción
 
-Este sistema automatiza el registro de llegadas para empleados que salieron con permiso y aún no han regresado hasta las 5:00 PM (17:00 hrs).
+Este sistema automatiza el registro de llegadas para empleados que salieron con permiso y aún no han regresado hasta las 6:00 PM (18:00 hrs).
 
 ## ¿Cómo funciona?
 
 1. **Detección automática**: El sistema detecta todos los empleados con estado `out` (fuera de oficina).
 
-2. **Registro automático**: A las 5:00 PM de cada día laborable (lunes a viernes), el sistema:
+2. **Registro automático**: A las 6:00 PM de cada día laborable (lunes a viernes), el sistema:
    - Busca todos los registros de tracking con estado `out`
-   - Registra automáticamente el regreso a las 17:00 hrs
+   - Registra automáticamente el regreso a las 18:00 hrs
    - Calcula las horas reales utilizadas
    - Actualiza el estado del permiso a `approved`
    - Agrega una nota indicando que fue un registro automático
@@ -34,13 +34,13 @@ php artisan tracking:auto-register-returns --dry-run
 
 El comando está programado para ejecutarse automáticamente:
 
-- **Horario**: 17:00 hrs (5:00 PM)
+- **Horario**: 18:00 hrs (6:00 PM)
 - **Días**: Lunes a Viernes (días laborables)
 - **Ubicación del código**: `routes/console.php`
 
 ```php
 Schedule::command('tracking:auto-register-returns')
-    ->dailyAt('17:00')
+    ->dailyAt('18:00')
     ->weekdays()
     ->withoutOverlapping()
     ->runInBackground();
@@ -81,7 +81,7 @@ El sistema registra cada ejecución en los logs de Laravel:
 
 ### Ejemplo de log:
 ```
-[2025-10-23 17:00:01] local.INFO: Auto-registered return for employee {"tracking_id":1,"employee_id":5,"employee_name":"Juan Pérez","departure_datetime":"2025-10-23 08:00:00","return_datetime":"2025-10-23 17:00:00","actual_hours_used":9.0}
+[2025-10-23 18:00:01] local.INFO: Auto-registered return for employee {"tracking_id":1,"employee_id":5,"employee_name":"Juan Pérez","departure_datetime":"2025-10-23 08:00:00","return_datetime":"2025-10-23 18:00:00","actual_hours_used":10.0}
 ```
 
 ## Verificar tareas programadas
@@ -100,7 +100,7 @@ php artisan schedule:run
 
 1. **Usuario administrador requerido**: El sistema necesita al menos un usuario con rol `admin` para poder registrar las llegadas.
 
-2. **Horario de cierre**: El sistema registra todas las llegadas a las 17:00 hrs exactas, independientemente de la hora de salida.
+2. **Horario de cierre**: El sistema registra todas las llegadas a las 18:00 hrs exactas, independientemente de la hora de salida.
 
 3. **Días laborables**: Solo se ejecuta de lunes a viernes, no en fines de semana.
 
@@ -108,7 +108,7 @@ php artisan schedule:run
 
 5. **Notas automáticas**: Cada registro automático incluye una nota que indica:
    ```
-   Regreso registrado automáticamente por el sistema a las 17:00 hrs (horario de cierre).
+   Regreso registrado automáticamente por el sistema a las 18:00 hrs (horario de cierre).
    ```
 
 ## Solución de problemas
