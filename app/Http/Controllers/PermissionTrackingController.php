@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PermissionTracking;
 use App\Models\PermissionRequest;
+use App\Models\PermissionType;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -12,45 +13,118 @@ use Illuminate\Support\Facades\Validator;
 
 class PermissionTrackingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         // 1. Obtener permisos propios del usuario (Paginado)
         // Usamos 'own_page' para que no interfiera con la otra tabla
-        $ownTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+        $ownTrackings = PermissionTracking::with(['permissionRequest.user', 'permissionRequest.permissionType', 'registeredByUser'])
             ->whereHas('permissionRequest', function($q) use ($user) {
                 $q->where('user_id', $user->id);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(20, ['*'], 'own_page');
+            });
+
+        // Aplicar filtros a mis permisos si existen
+        $ownTrackings = $this->applyFilters($ownTrackings, $request);
+        $ownTrackings = $ownTrackings->orderBy('created_at', 'desc')->paginate(20, ['*'], 'own_page');
 
         // 2. Obtener permisos del equipo según el rol (Paginado)
         // Inicializamos como colección vacía por si no tiene rol
         $teamTrackings = collect();
-        
+
         if ($user->hasRole('jefe_inmediato')) {
             // Si es jefe inmediato, ver los permisos de sus subordinados
             $subordinateIds = $user->subordinates()->pluck('id');
-            
-            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+
+            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'permissionRequest.permissionType', 'registeredByUser'])
                 ->whereHas('permissionRequest', function($q) use ($subordinateIds) {
                     $q->whereIn('user_id', $subordinateIds);
-                })
-                ->orderBy('created_at', 'desc')
-                ->paginate(20, ['*'], 'team_page');
+                });
+
+            // Aplicar filtros al equipo
+            $teamTrackings = $this->applyFilters($teamTrackings, $request);
+            $teamTrackings = $teamTrackings->orderBy('created_at', 'desc')->paginate(20, ['*'], 'team_page');
 
         } elseif ($user->hasRole(['jefe_rrhh', 'admin'])) {
             // Si es jefe de RRHH o admin, ver todos los permisos excepto los propios
-            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'registeredByUser'])
+            $teamTrackings = PermissionTracking::with(['permissionRequest.user', 'permissionRequest.permissionType', 'registeredByUser'])
                 ->whereHas('permissionRequest', function($q) use ($user) {
                     $q->where('user_id', '!=', $user->id);
-                })
-                ->orderBy('created_at', 'desc')
-                ->paginate(20, ['*'], 'team_page');
+                });
+
+            // Aplicar filtros al equipo
+            $teamTrackings = $this->applyFilters($teamTrackings, $request);
+            $teamTrackings = $teamTrackings->orderBy('created_at', 'desc')->paginate(20, ['*'], 'team_page');
         }
 
-        return view('tracking.index', compact('ownTrackings', 'teamTrackings'));
+        // Obtener tipos de permiso para el filtro
+        $permissionTypes = PermissionType::orderBy('name')->get();
+
+        return view('tracking.index', compact('ownTrackings', 'teamTrackings', 'permissionTypes'));
+    }
+
+    protected function applyFilters($query, Request $request)
+    {
+        // Filtro por nombre del empleado
+        if ($request->filled('name')) {
+            $query->whereHas('permissionRequest.user', function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->name . '%');
+            });
+        }
+
+        // Filtro por DNI
+        if ($request->filled('dni')) {
+            $query->where('employee_dni', 'like', '%' . $request->dni . '%');
+        }
+
+        // Filtro por estado de tracking
+        if ($request->filled('status')) {
+            $query->where('tracking_status', $request->status);
+        }
+
+        // Filtro por tipo de permiso
+        if ($request->filled('permission_type')) {
+            $query->whereHas('permissionRequest', function($q) use ($request) {
+                $q->where('permission_type_id', $request->permission_type);
+            });
+        }
+
+        // Filtro por código de permiso
+        if ($request->filled('code')) {
+            $query->whereHas('permissionRequest', function($q) use ($request) {
+                $q->where('code', 'like', '%' . $request->code . '%');
+            });
+        }
+
+        // Filtro por fecha de salida
+        if ($request->filled('departure_from')) {
+            $query->whereDate('departure_datetime', '>=', $request->departure_from);
+        }
+        if ($request->filled('departure_to')) {
+            $query->whereDate('departure_datetime', '<=', $request->departure_to);
+        }
+
+        // Filtro por fecha de regreso
+        if ($request->filled('return_from')) {
+            $query->whereDate('return_datetime', '>=', $request->return_from);
+        }
+        if ($request->filled('return_to')) {
+            $query->whereDate('return_datetime', '<=', $request->return_to);
+        }
+
+        // Filtro por retrasos
+        if ($request->filled('overdue') && $request->overdue == '1') {
+            $query->where(function($q) {
+                $q->where('tracking_status', PermissionTracking::STATUS_OVERDUE)
+                  ->orWhere(function($q2) {
+                      $q2->where('tracking_status', PermissionTracking::STATUS_OUT)
+                         ->whereNotNull('departure_datetime')
+                         ->whereNull('return_datetime');
+                  });
+            });
+        }
+
+        return $query;
     }
 
     public function show(PermissionTracking $tracking)
