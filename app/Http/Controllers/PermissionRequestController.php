@@ -110,13 +110,20 @@ class PermissionRequestController extends Controller
      */
     public function edit(PermissionRequest $permission)
     {
-        if ($permission->user_id !== Auth::id() || !$permission->isEditable()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user) {
+            abort(403, 'Debe estar autenticado.');
+        }
+
+        if ($permission->user_id !== $user->id || !$permission->isEditable()) {
             abort(403, 'No puede editar esta solicitud.');
         }
 
         $permissionTypes = PermissionType::active()->get();
-        $stats = $this->permissionService->getUserPermissionStats(Auth::user());
-        
+        $stats = $this->permissionService->getUserPermissionStats($user);
+
         return view('permissions.edit', compact('permission', 'permissionTypes', 'stats'));
     }
 
@@ -156,7 +163,10 @@ class PermissionRequestController extends Controller
      */
     public function submit(PermissionRequest $permission)
     {
-        if ($permission->user_id !== Auth::id()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user || $permission->user_id !== $user->id) {
             abort(403, 'No puede enviar esta solicitud.');
         }
 
@@ -181,7 +191,10 @@ class PermissionRequestController extends Controller
      */
     public function submitWithoutSignature(PermissionRequest $permission)
     {
-        if ($permission->user_id !== Auth::id()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user || $permission->user_id !== $user->id) {
             abort(403, 'No puede enviar esta solicitud.');
         }
 
@@ -207,7 +220,10 @@ class PermissionRequestController extends Controller
      */
     public function cancel(PermissionRequest $permission)
     {
-        if ($permission->user_id !== Auth::id()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user || $permission->user_id !== $user->id) {
             abort(403, 'No puede cancelar esta solicitud.');
         }
 
@@ -219,7 +235,7 @@ class PermissionRequestController extends Controller
             }
 
             return back()->with('error', 'No se puede cancelar esta solicitud en su estado actual.');
-            
+
         } catch (\Exception $e) {
             return back()->with('error', 'Error al cancelar la solicitud: ' . $e->getMessage());
         }
@@ -230,7 +246,10 @@ class PermissionRequestController extends Controller
      */
     public function uploadDocument(Request $request, PermissionRequest $permission)
     {
-        if ($permission->user_id !== Auth::id() || !$permission->canUploadDocuments()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user || $permission->user_id !== $user->id || !$permission->canUploadDocuments()) {
             abort(403, 'No puede agregar documentos a esta solicitud.');
         }
 
@@ -247,7 +266,7 @@ class PermissionRequestController extends Controller
             );
 
             return back()->with('success', 'Documento agregado exitosamente.');
-            
+
         } catch (\Exception $e) {
             return back()->with('error', 'Error al subir el documento: ' . $e->getMessage());
         }
@@ -258,7 +277,10 @@ class PermissionRequestController extends Controller
      */
     public function deleteDocument(PermissionRequest $permission, Document $document)
     {
-        if ($permission->user_id !== Auth::id() || !$permission->canUploadDocuments()) {
+        $user = Auth::user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user || $permission->user_id !== $user->id || !$permission->canUploadDocuments()) {
             abort(403, 'No puede eliminar documentos de esta solicitud.');
         }
 
@@ -518,22 +540,32 @@ class PermissionRequestController extends Controller
     private function canView(PermissionRequest $permission): bool
     {
         $user = Auth::user();
-        
+
+        // Verificar que hay usuario autenticado
+        if (!$user) {
+            return false;
+        }
+
         // Puede ver si es suya
         if ($permission->user_id === $user->id) {
             return true;
         }
-        
+
+        // Cargar relación user si no está cargada
+        if (!$permission->relationLoaded('user')) {
+            $permission->load('user');
+        }
+
         // Puede ver si es supervisor del solicitante
-        if ($permission->user->immediate_supervisor_id === $user->id) {
+        if ($permission->user && $permission->user->immediate_supervisor_id === $user->id) {
             return true;
         }
-        
+
         // Puede ver si es RRHH o Admin
         if ($user->hasRole('jefe_rrhh') || $user->hasRole('admin')) {
             return true;
         }
-        
+
         return false;
     }
 }
