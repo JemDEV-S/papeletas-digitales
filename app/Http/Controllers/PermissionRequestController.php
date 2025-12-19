@@ -104,7 +104,8 @@ class PermissionRequestController extends Controller
         }
 
         $currentUser = Auth::user();
-        $isOwner = $currentUser && $permission->user_id === $currentUser->id;
+        // Cast a int para compatibilidad PHP 8.3 (user_id puede ser string desde DB)
+        $isOwner = $currentUser && (int)$permission->user_id === (int)$currentUser->id;
         $canApprove = $currentUser && $currentUser->canApprove($permission);
 
         return view('permissions.show', compact('permission', 'isOwner', 'canApprove'));

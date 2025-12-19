@@ -26,6 +26,9 @@ class PermissionRequest extends Model
     ];
 
     protected $casts = [
+        'user_id' => 'integer',
+        'permission_type_id' => 'integer',
+        'current_approval_level' => 'integer',
         'submitted_at' => 'datetime',
         'metadata' => 'array',
     ];
