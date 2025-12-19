@@ -4,7 +4,9 @@
       "Bash(php artisan make:migration:*)",
       "Bash(php artisan config:clear:*)",
       "Bash(php artisan:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
