@@ -12,8 +12,14 @@ class RejectPermissionRequest extends FormRequest
     public function authorize(): bool
     {
         $permission = $this->route('permission');
-        
-        return auth()->user()->canApprove($permission);
+        $user = auth()->user();
+
+        // Verificar que hay usuario autenticado y permiso válido
+        if (!$user || !$permission) {
+            return false;
+        }
+
+        return $user->canApprove($permission);
     }
 
     /**

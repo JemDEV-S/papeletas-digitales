@@ -15,8 +15,14 @@ class UpdatePermissionRequestRequest extends FormRequest
     public function authorize(): bool
     {
         $permission = $this->route('permission');
-        
-        return $permission->user_id === auth()->id() && $permission->isEditable();
+        $user = auth()->user();
+
+        // Verificar que hay usuario autenticado y permiso válido
+        if (!$user || !$permission) {
+            return false;
+        }
+
+        return $permission->user_id === $user->id && $permission->isEditable();
     }
 
     /**

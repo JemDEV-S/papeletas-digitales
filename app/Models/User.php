@@ -137,10 +137,16 @@ class User extends Authenticatable
      */
     public function canApprove(PermissionRequest $request): bool
     {
+        // Cargar relación user si no está cargada
+        if (!$request->relationLoaded('user')) {
+            $request->load('user');
+        }
+
         // Si no hay request o no tiene usuario, solo verificar si puede aprobar en general
         if (!$request || !$request->user) {
             return $this->isSupervisor() || $this->isHRChief();
         }
+
         // Si es el jefe inmediato del solicitante
         if ($request->user->immediate_supervisor_id === $this->id) {
             return true;

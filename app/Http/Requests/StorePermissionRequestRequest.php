@@ -13,7 +13,8 @@ class StorePermissionRequestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        // Verificar que hay usuario autenticado
+        return auth()->check();
     }
 
     /**

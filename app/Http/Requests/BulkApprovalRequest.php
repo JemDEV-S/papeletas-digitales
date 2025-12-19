@@ -11,7 +11,14 @@ class BulkApprovalRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return auth()->user()->isSupervisor() || auth()->user()->isHRChief();
+        $user = auth()->user();
+
+        // Verificar que hay usuario autenticado
+        if (!$user) {
+            return false;
+        }
+
+        return $user->isSupervisor() || $user->isHRChief();
     }
 
     /**
