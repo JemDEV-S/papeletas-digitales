@@ -417,7 +417,8 @@ class ApprovalController extends Controller
      */
     private function getExpectedStatusForApprover($user, $permission): string
     {
-        if ($permission->user->immediate_supervisor_id === $user->id) {
+        // Cast a int para compatibilidad PHP 8.3
+        if ((int)$permission->user->immediate_supervisor_id === (int)$user->id) {
             return PermissionRequest::STATUS_PENDING_IMMEDIATE_BOSS;
         }
 

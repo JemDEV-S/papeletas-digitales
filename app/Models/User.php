@@ -47,6 +47,9 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
+        'role_id' => 'integer',
+        'department_id' => 'integer',
+        'immediate_supervisor_id' => 'integer',
         'email_verified_at' => 'datetime',
         'two_factor_expires_at' => 'datetime',
         'is_active' => 'boolean',
