@@ -20,8 +20,10 @@ class Approval extends Model
     ];
 
     protected $casts = [
-        'approved_at' => 'datetime',
+        'permission_request_id' => 'integer',
+        'approver_id' => 'integer',
         'approval_level' => 'integer',
+        'approved_at' => 'datetime',
     ];
 
     /**
