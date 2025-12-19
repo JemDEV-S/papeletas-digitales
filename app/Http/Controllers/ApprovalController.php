@@ -112,10 +112,29 @@ class ApprovalController extends Controller
     public function approve(ApprovePermissionRequest $request, PermissionRequest $permission)
     {
         $user = Auth::user();
-        
+
+        \Log::info('Approval attempt', [
+            'user_id' => $user->id,
+            'permission_id' => $permission->id,
+            'permission_status' => $permission->status,
+            'permission_user_id' => $permission->user_id,
+            'user_immediate_supervisor_id' => $permission->user->immediate_supervisor_id ?? null,
+        ]);
+
         // Verificar estado actual
         $expectedStatus = $this->getExpectedStatusForApprover($user, $permission);
+
+        \Log::info('Expected status check', [
+            'expected' => $expectedStatus,
+            'actual' => $permission->status,
+            'match' => $permission->status === $expectedStatus,
+        ]);
+
         if ($permission->status !== $expectedStatus) {
+            \Log::warning('Status mismatch in approval', [
+                'expected' => $expectedStatus,
+                'actual' => $permission->status,
+            ]);
             return redirect()->route('approvals.index')
                 ->with('error', 'Esta solicitud ya no está pendiente de su aprobación.');
         }
@@ -127,18 +146,25 @@ class ApprovalController extends Controller
                 $request->validated()['comments'] ?? null
             );
 
+            \Log::info('Approval result', ['result' => $result]);
+
             if ($result) {
-                $message = $permission->status === PermissionRequest::STATUS_APPROVED 
-                    ? 'Solicitud aprobada exitosamente.' 
+                $message = $permission->status === PermissionRequest::STATUS_APPROVED
+                    ? 'Solicitud aprobada exitosamente.'
                     : 'Solicitud aprobada y enviada a RRHH para aprobación final.';
-                
+
                 return redirect()->route('approvals.index')
                     ->with('success', $message);
             }
-            
-            return back()->with('error', 'Error al aprobar la solicitud.');
-            
+
+            \Log::error('Approval returned false');
+            return back()->with('error', 'Error al aprobar la solicitud. Por favor, revise los logs.');
+
         } catch (\Exception $e) {
+            \Log::error('Exception in approval', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return back()->with('error', 'Error al procesar la aprobación: ' . $e->getMessage());
         }
     }
