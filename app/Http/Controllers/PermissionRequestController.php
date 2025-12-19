@@ -103,7 +103,11 @@ class PermissionRequestController extends Controller
             abort(403, 'No tiene permisos para ver esta solicitud.');
         }
 
-        return view('permissions.show', compact('permission'));
+        $currentUser = Auth::user();
+        $isOwner = $currentUser && $permission->user_id === $currentUser->id;
+        $canApprove = $currentUser && $currentUser->canApprove($permission);
+
+        return view('permissions.show', compact('permission', 'isOwner', 'canApprove'));
     }
 
     /**

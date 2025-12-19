@@ -258,7 +258,7 @@
                                                 </svg>
                                                 Ver
                                             </a>
-                                            @if($permission->canUploadDocuments() && $permission->user_id === auth()->id())
+                                            @if($permission->canUploadDocuments() && $isOwner)
                                                 <form action="{{ route('permissions.documents.delete', [$permission, $document]) }}" method="POST" class="inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -278,7 +278,7 @@
                             </div>
 
                             <!-- Formulario para agregar más documentos -->
-                            @if($permission->canUploadDocuments() && $permission->user_id === auth()->id())
+                            @if($permission->canUploadDocuments() && $isOwner)
                                 <div class="mt-6 pt-6 border-t border-gray-200">
                                     <div class="flex items-center justify-between mb-4">
                                         <h4 class="text-sm font-medium text-gray-900">Agregar Documento</h4>
@@ -347,7 +347,7 @@
                                 </svg>
                                 <p class="mt-2 text-sm text-gray-500">No hay documentos adjuntos</p>
                                 
-                                @if($permission->canUploadDocuments() && $permission->user_id === auth()->id())
+                                @if($permission->canUploadDocuments() && $isOwner)
                                     <div class="mt-6">
                                         <div class="flex items-center justify-between mb-4">
                                             <h4 class="text-sm font-medium text-gray-900">Agregar Documento</h4>
@@ -696,7 +696,7 @@
                 <div class="bg-white shadow-sm rounded-xl border border-gray-200">
                     <div class="p-6">
                         <div class="flex flex-col sm:flex-row gap-3">
-                            @if($permission->user_id === auth()->id())
+                            @if($isOwner)
                                 @if($permission->isEditable())
                                     <a href="{{ route('permissions.edit', $permission) }}" 
                                        class="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
@@ -765,7 +765,7 @@
                                 @endif
                             @endif
 
-                            @if(auth()->user()->canApprove($permission) && $permission->currentApproval() && $permission->currentApproval()->isPending())
+                            @if($canApprove && $permission->currentApproval() && $permission->currentApproval()->isPending())
                                 <a href="{{ route('approvals.show', $permission) }}" 
                                    class="inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
