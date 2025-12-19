@@ -96,12 +96,13 @@ class PermissionRequestController extends Controller
      */
     public function show(PermissionRequest $permission)
     {
+        // Cargar relaciones necesarias ANTES de verificar permisos
+        $permission->load(['user', 'permissionType', 'documents', 'approvals.approver']);
+
         if (!$this->canView($permission)) {
             abort(403, 'No tiene permisos para ver esta solicitud.');
         }
 
-        $permission->load(['user', 'permissionType', 'documents', 'approvals.approver']);
-        
         return view('permissions.show', compact('permission'));
     }
 
@@ -542,12 +543,21 @@ class PermissionRequestController extends Controller
         $user = Auth::user();
 
         // Verificar que hay usuario autenticado
-        if (!$user) {
+        if (!$user || !$user->id) {
+            \Log::warning('canView: No hay usuario autenticado', [
+                'user' => $user ? 'existe pero sin id' : 'null',
+                'user_id' => $user->id ?? 'null'
+            ]);
             return false;
         }
 
-        // Puede ver si es suya
-        if ($permission->user_id === $user->id) {
+        // Cargar relación role si no está cargada
+        if (!$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+
+        // Puede ver si es suya (comparación estricta de tipos)
+        if ($permission->user_id && (int)$permission->user_id === (int)$user->id) {
             return true;
         }
 
@@ -562,9 +572,19 @@ class PermissionRequestController extends Controller
         }
 
         // Puede ver si es RRHH o Admin
-        if ($user->hasRole('jefe_rrhh') || $user->hasRole('admin')) {
+        if ($user->hasRole(['jefe_rrhh', 'admin'])) {
             return true;
         }
+
+        \Log::warning('canView: Usuario no tiene permisos', [
+            'user_id' => $user->id,
+            'user_id_type' => gettype($user->id),
+            'permission_id' => $permission->id,
+            'permission_user_id' => $permission->user_id,
+            'permission_user_id_type' => gettype($permission->user_id),
+            'user_role' => $user->role ? $user->role->name : 'sin rol',
+            'ids_match' => (int)$permission->user_id === (int)$user->id,
+        ]);
 
         return false;
     }
