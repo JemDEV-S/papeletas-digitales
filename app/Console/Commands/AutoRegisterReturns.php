@@ -24,7 +24,7 @@ class AutoRegisterReturns extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically register return for employees who are still out at 6:00 PM';
+    protected $description = 'Automatically register return for employees who are still out at 5:00 PM';
 
     /**
      * Execute the console command.
@@ -81,19 +81,19 @@ class AutoRegisterReturns extends Command
             $this->line("  Departure: {$departureTime->format('Y-m-d H:i:s')}");
 
             if ($dryRun) {
-                $this->line("  [DRY-RUN] Would register return at 6:00 PM");
+                $this->line("  [DRY-RUN] Would register return at 5:00 PM");
                 $this->line("  [DRY-RUN] Would generate PDF with tracking overlay");
                 $registered++;
             } else {
-                // Registrar el regreso automáticamente a las 18:00 (6:00 PM) hora de Lima
-                $returnTime = Carbon::today('America/Lima')->setTime(18, 0, 0);
+                // Registrar el regreso automáticamente a las 17:00 (5:00 PM) hora de Lima
+                $returnTime = Carbon::today('America/Lima')->setTime(17, 0, 0);
 
                 $tracking->return_datetime = $returnTime;
                 $tracking->tracking_status = PermissionTracking::STATUS_RETURNED;
                 //$tracking->registered_by_user_id = $systemUser->id;
                 $tracking->calculateActualHours();
 
-                $notes = "Regreso registrado automáticamente por el sistema a las 18:00 hrs (horario de cierre).";
+                $notes = "Regreso registrado automáticamente por el sistema a las 17:00 hrs (horario de cierre).";
                 if ($tracking->notes) {
                     $tracking->notes = $tracking->notes . "\n" . $notes;
                 } else {
