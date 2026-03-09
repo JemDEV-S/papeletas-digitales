@@ -111,7 +111,7 @@ class Document extends Model
         parent::boot();
 
         static::deleting(function ($document) {
-            Storage::delete($document->file_path);
+            Storage::disk('public')->delete($document->file_path);
         });
     }
 
@@ -120,11 +120,11 @@ class Document extends Model
      */
     public function verifyIntegrity(): bool
     {
-        if (!Storage::exists($this->file_path)) {
+        if (!Storage::disk('public')->exists($this->file_path)) {
             return false;
         }
 
-        $currentHash = hash_file('sha256', Storage::path($this->file_path));
+        $currentHash = hash_file('sha256', Storage::disk('public')->path($this->file_path));
         return $currentHash === $this->file_hash;
     }
 

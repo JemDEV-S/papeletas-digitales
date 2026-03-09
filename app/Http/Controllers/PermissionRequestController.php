@@ -504,38 +504,45 @@ class PermissionRequestController extends Controller
             }
 
             // Verificar que el documento pertenece a la solicitud
-            if ($document->permission_request_id !== $permission->id) {
+            if ((int) $document->permission_request_id !== (int) $permission->id) {
                 abort(404, 'Documento no encontrado.');
             }
 
-            // Verificar que el archivo existe
-            if (!Storage::disk('public')->exists($document->file_path)) {
-                abort(404, 'El archivo no existe: ' . $document->file_path);
+            // Obtener la ruta absoluta del archivo
+            $absolutePath = Storage::disk('public')->path($document->file_path);
+
+            // Verificar que el archivo existe en el sistema de archivos
+            if (!file_exists($absolutePath)) {
+                \Log::error('Document file not found', [
+                    'document_id' => $document->id,
+                    'file_path' => $document->file_path,
+                    'absolute_path' => $absolutePath,
+                ]);
+                abort(404, 'El archivo no existe en el servidor.');
             }
 
-            // Obtener el contenido del archivo
-            $fileContent = Storage::disk('public')->get($document->file_path);
-            
             // Determinar si es para descarga o visualización inline
             $disposition = ($document->isPdf() || $document->isImage()) ? 'inline' : 'attachment';
-            
-            return response($fileContent)
-                ->header('Content-Type', $document->mime_type)
-                ->header('Content-Disposition', $disposition . '; filename="' . $document->original_name . '"')
-                ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-                ->header('Pragma', 'no-cache')
-                ->header('Expires', '0');
-                
+
+            return response()->file($absolutePath, [
+                'Content-Type' => $document->mime_type,
+                'Content-Disposition' => $disposition . '; filename="' . $document->original_name . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ]);
+
         } catch (\Exception $e) {
             // Log the error for debugging
             \Log::error('Error serving document', [
                 'permission_id' => $permission->id,
                 'document_id' => $document->id,
                 'file_path' => $document->file_path ?? 'N/A',
+                'absolute_path' => Storage::disk('public')->path($document->file_path ?? ''),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             abort(500, 'Error al servir el documento: ' . $e->getMessage());
         }
     }
