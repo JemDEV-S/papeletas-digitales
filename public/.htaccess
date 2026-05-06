@@ -23,3 +23,10 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Deshabilitar mod_security para el endpoint de upload de documentos firmados (FIRMA PERÚ)
+<IfModule mod_security2.c>
+    <If "%{REQUEST_URI} =~ m|/api/firma-peru/upload|">
+        SecRuleEngine Off
+    </If>
+</IfModule>
