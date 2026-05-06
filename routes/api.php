@@ -28,12 +28,8 @@ Route::prefix('firma-peru')->name('api.firma-peru.')->group(function () {
         ->name('signed-document');
         
     // Endpoint para recibir documentos firmados
-    // Route::post('/upload/{permission}', [FirmaPeruController::class, 'uploadSignedDocument'])
-    //     ->name('upload');
-    Route::post('/upload/{permission}', function ($permission) {
-    \Log::info("LLEGO: " . $permission);
-    return response()->json(['ok' => true]);
-});
+    Route::post('/upload/{permission}', [FirmaPeruController::class, 'uploadSignedDocument'])
+        ->name('upload');
 });
 
 // Rutas para agentes ZKTeco
