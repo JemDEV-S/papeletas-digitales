@@ -26,7 +26,7 @@
 
 # Deshabilitar mod_security para el endpoint de upload de documentos firmados (FIRMA PERÚ)
 <IfModule mod_security2.c>
-    <If "%{REQUEST_URI} =~ m|/api/firma-peru/upload|">
-        SecRuleEngine Off
-    </If>
+    <LocationMatch "/firma-peru/upload">
+        SecRuleRemoveById 600004
+    </LocationMatch>
 </IfModule>
