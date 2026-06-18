@@ -11,6 +11,7 @@ use App\Http\Controllers\AgentManagementController;
 use App\Http\Controllers\HRReportsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
+use App\Http\Controllers\Admin\PermissionDocumentController as AdminPermissionDocumentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -243,6 +244,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // === RUTAS ADMINISTRATIVAS PARA FIRMA DIGITAL (Solo Admin) ===
     Route::middleware(['role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        // Gestión administrativa de sustentos de papeletas
+        Route::get('/permissions', [AdminPermissionDocumentController::class, 'index'])->name('permissions.index');
+        Route::post('/permissions/{permission}/documents', [AdminPermissionDocumentController::class, 'store'])->name('permissions.documents.store');
+        Route::delete('/permissions/{permission}/documents/{document}', [AdminPermissionDocumentController::class, 'destroy'])->name('permissions.documents.destroy');
         
         // Gestión de firmas digitales
         Route::get('/signatures', [SignatureController::class, 'adminIndex'])->name('signatures.index');

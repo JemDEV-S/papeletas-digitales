@@ -221,6 +221,12 @@
                 </div>
 
                 <!-- Documentos Adjuntos -->
+                @php
+                    $canManageDocuments = ($permission->canUploadDocuments() && $isOwner) || ($canAdminManageDocuments ?? false);
+                    $documentUploadRoute = ($canAdminManageDocuments ?? false)
+                        ? route('admin.permissions.documents.store', $permission)
+                        : route('permissions.documents.upload', $permission);
+                @endphp
                 <div class="bg-white shadow-sm rounded-xl border border-gray-200">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex items-center justify-between">
@@ -258,8 +264,8 @@
                                                 </svg>
                                                 Ver
                                             </a>
-                                            @if($permission->canUploadDocuments() && $isOwner)
-                                                <form action="{{ route('permissions.documents.delete', [$permission, $document]) }}" method="POST" class="inline">
+                                            @if($canManageDocuments)
+                                                <form action="{{ ($canAdminManageDocuments ?? false) ? route('admin.permissions.documents.destroy', [$permission, $document]) : route('permissions.documents.delete', [$permission, $document]) }}" method="POST" class="inline">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" 
@@ -278,11 +284,17 @@
                             </div>
 
                             <!-- Formulario para agregar más documentos -->
-                            @if($permission->canUploadDocuments() && $isOwner)
+                            @if($canManageDocuments)
                                 <div class="mt-6 pt-6 border-t border-gray-200">
                                     <div class="flex items-center justify-between mb-4">
-                                        <h4 class="text-sm font-medium text-gray-900">Agregar Documento</h4>
-                                        @if($permission->status === 'approved')
+                                        <h4 class="text-sm font-medium text-gray-900">
+                                            {{ ($canAdminManageDocuments ?? false) ? 'Adjuntar sustento como administrador' : 'Agregar Documento' }}
+                                        </h4>
+                                        @if($canAdminManageDocuments ?? false)
+                                            <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                                Sin restricción por estado
+                                            </span>
+                                        @elseif($permission->status === 'approved')
                                             @php
                                                 $finalApprovalDate = $permission->getFinalApprovalDate();
                                                 $deadline = $finalApprovalDate ? $finalApprovalDate->copy()->addHours(24) : null;
@@ -299,7 +311,7 @@
                                             </span>
                                         @endif
                                     </div>
-                                    <form action="{{ route('permissions.documents.upload', $permission) }}" method="POST" enctype="multipart/form-data">
+                                    <form action="{{ $documentUploadRoute }}" method="POST" enctype="multipart/form-data">
                                         @csrf
                                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                                             <div>
@@ -347,11 +359,17 @@
                                 </svg>
                                 <p class="mt-2 text-sm text-gray-500">No hay documentos adjuntos</p>
                                 
-                                @if($permission->canUploadDocuments() && $isOwner)
+                                @if($canManageDocuments)
                                     <div class="mt-6">
                                         <div class="flex items-center justify-between mb-4">
-                                            <h4 class="text-sm font-medium text-gray-900">Agregar Documento</h4>
-                                            @if($permission->status === 'approved')
+                                            <h4 class="text-sm font-medium text-gray-900">
+                                                {{ ($canAdminManageDocuments ?? false) ? 'Adjuntar sustento como administrador' : 'Agregar Documento' }}
+                                            </h4>
+                                            @if($canAdminManageDocuments ?? false)
+                                                <span class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                                    Sin restricción por estado
+                                                </span>
+                                            @elseif($permission->status === 'approved')
                                                 @php
                                                     $finalApprovalDate = $permission->getFinalApprovalDate();
                                                     $deadline = $finalApprovalDate ? $finalApprovalDate->copy()->addHours(24) : null;
@@ -368,7 +386,7 @@
                                                 </span>
                                             @endif
                                         </div>
-                                        <form action="{{ route('permissions.documents.upload', $permission) }}" method="POST" enctype="multipart/form-data">
+                                        <form action="{{ $documentUploadRoute }}" method="POST" enctype="multipart/form-data">
                                             @csrf
                                             <div class="max-w-lg mx-auto grid grid-cols-1 gap-4">
                                                 <select name="document_type" 

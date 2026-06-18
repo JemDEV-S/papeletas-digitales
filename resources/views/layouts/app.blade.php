@@ -222,6 +222,14 @@
                                 <i class="fas fa-building mr-3 text-gray-400 group-hover:text-white"></i>
                                 Departamentos
                             </a>
+
+                            @if(auth()->user()->hasRole('admin'))
+                                <!-- Gestión de Papeletas -->
+                                <a href="{{ route('admin.permissions.index') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.permissions.*') ? 'bg-gray-700 text-white' : '' }}">
+                                    <i class="fas fa-folder-open mr-3 text-gray-400 group-hover:text-white"></i>
+                                    Papeletas
+                                </a>
+                            @endif
                             
                             <!-- Jerarquía Organizacional -->
                             <a href="{{ route('admin.users.hierarchy') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.users.hierarchy') ? 'bg-gray-700 text-white' : '' }}">
