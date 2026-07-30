@@ -247,6 +247,10 @@
                                     <i class="fas fa-analytics mr-3 text-gray-400 group-hover:text-white"></i>
                                     Estadísticas
                                 </a>
+                                <a href="{{ route('admin.settings.edit') }}" class="sidebar-item flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:text-white group {{ request()->routeIs('admin.settings.*') ? 'bg-gray-700 text-white' : '' }}">
+                                    <i class="fas fa-sliders-h mr-3 text-gray-400 group-hover:text-white"></i>
+                                    Configuración
+                                </a>
                             @endif
                         </div>
                     @endif

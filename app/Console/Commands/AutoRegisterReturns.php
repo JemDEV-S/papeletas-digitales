@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\PermissionTracking;
 use App\Models\PermissionRequest;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\PdfGeneratorService;
 use Carbon\Carbon;
@@ -24,7 +25,7 @@ class AutoRegisterReturns extends Command
      *
      * @var string
      */
-    protected $description = 'Automatically register return for employees who are still out at 5:00 PM';
+    protected $description = 'Automatically register return for employees who are still out at the configured closing time';
 
     /**
      * Execute the console command.
@@ -33,8 +34,12 @@ class AutoRegisterReturns extends Command
     {
         $dryRun = $this->option('dry-run');
 
+        $closingTime = Setting::get('auto_return_time', '17:00');
+        [$closingHour, $closingMinute] = array_map('intval', explode(':', $closingTime));
+
         $this->info('=== Auto-Register Returns Command ===');
         $this->info('Execution time: ' . now()->format('Y-m-d H:i:s'));
+        $this->info("Closing time configured: {$closingTime}");
 
         if ($dryRun) {
             $this->warn('Running in DRY-RUN mode - no changes will be made');
@@ -81,19 +86,19 @@ class AutoRegisterReturns extends Command
             $this->line("  Departure: {$departureTime->format('Y-m-d H:i:s')}");
 
             if ($dryRun) {
-                $this->line("  [DRY-RUN] Would register return at 5:00 PM");
+                $this->line("  [DRY-RUN] Would register return at {$closingTime}");
                 $this->line("  [DRY-RUN] Would generate PDF with tracking overlay");
                 $registered++;
             } else {
-                // Registrar el regreso automáticamente a las 17:00 (5:00 PM) hora de Lima
-                $returnTime = Carbon::today('America/Lima')->setTime(17, 0, 0);
+                // Registrar el regreso automáticamente a la hora de cierre configurada, hora de Lima
+                $returnTime = Carbon::today('America/Lima')->setTime($closingHour, $closingMinute, 0);
 
                 $tracking->return_datetime = $returnTime;
                 $tracking->tracking_status = PermissionTracking::STATUS_RETURNED;
                 //$tracking->registered_by_user_id = $systemUser->id;
                 $tracking->calculateActualHours();
 
-                $notes = "Regreso registrado automáticamente por el sistema a las 17:00 hrs (horario de cierre).";
+                $notes = "Regreso registrado automáticamente por el sistema a las {$closingTime} hrs (horario de cierre).";
                 if ($tracking->notes) {
                     $tracking->notes = $tracking->notes . "\n" . $notes;
                 } else {

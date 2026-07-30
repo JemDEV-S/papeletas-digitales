@@ -12,6 +12,7 @@ use App\Http\Controllers\HRReportsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\DepartmentController as AdminDepartmentController;
 use App\Http\Controllers\Admin\PermissionDocumentController as AdminPermissionDocumentController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -293,6 +294,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/departments-hierarchy', [AdminDepartmentController::class, 'hierarchy'])->name('departments.hierarchy');
         Route::get('/departments-hierarchy/data', [AdminDepartmentController::class, 'getHierarchyData'])->name('departments.hierarchy.data');
         Route::get('/departments/{department}/users', [AdminDepartmentController::class, 'getUsersByDepartment'])->name('departments.users');
+
+        // Configuración del sistema
+        Route::get('/settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
     });
 });
 
