@@ -16,5 +16,8 @@ class VerifyCsrfToken extends Middleware
         'api/firma-peru/upload/*',
         'api/firma-peru/document/*',
         'api/firma-peru/signed-document/*',
+        // Cerrar sesión es una acción segura e idempotente: no debe fallar con
+        // error 419 si el token CSRF ya expiró por inactividad.
+        'logout',
     ];
 }
